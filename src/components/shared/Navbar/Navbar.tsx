@@ -73,7 +73,7 @@ export default function Navbar() {
     <>
       <header className="w-full bg-white text-slate-800 border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         {/* ১. মেইন টপ হেডার */}
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+        <div className="container h-16 flex items-center justify-between gap-4">
           <Link
             href="/"
             className="flex items-center gap-1.5 text-2xl font-black tracking-tight text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded p-1"
@@ -89,7 +89,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="hidden md:flex flex-1 max-w-xl relative">
+          <div className="hidden md:ml-9 md:flex flex-1 max-w-xl relative">
             <input
               type="text"
               placeholder="Search medicine or health products..."
@@ -157,7 +157,7 @@ export default function Navbar() {
             {/* বামের বাটন (মেইন কন্টেইনারের ভেতরে অ্যালাইন করা) */}
             <button
               onClick={() => scroll("left")}
-              className="absolute left-2 z-10 p-1 bg-white hover:bg-slate-100 hover:text-emerald-600 text-slate-500 rounded-full shadow-md border border-slate-200 transition-all active:scale-95 hidden md:block"
+              className="absolute cursor-pointer left-2 z-10 p-1 bg-white hover:bg-slate-100 hover:text-emerald-600 text-slate-500 rounded-full shadow-md border border-slate-200 transition-all active:scale-95 hidden md:block"
               aria-label="Scroll Left"
             >
               <ChevronLeft size={18} />
@@ -194,7 +194,7 @@ export default function Navbar() {
             {/* ডানের বাটন (মেইন কন্টেইনারের ভেতরে অ্যালাইন করা) */}
             <button
               onClick={() => scroll("right")}
-              className="absolute right-2 z-10 p-1 bg-white hover:bg-slate-100 hover:text-emerald-600 text-slate-500 rounded-full shadow-md border border-slate-200 transition-all active:scale-95 hidden md:block"
+              className="absolute cursor-pointer right-2 z-10 p-1 bg-white hover:bg-slate-100 hover:text-emerald-600 text-slate-500 rounded-full shadow-md border border-slate-200 transition-all active:scale-95 hidden md:block"
               aria-label="Scroll Right"
             >
               <ChevronRight size={18} />

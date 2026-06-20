@@ -1,188 +1,325 @@
 "use client";
 
-import React, { useState } from "react";
-import { Search, MapPin, ShieldAlert, Heart, UserCheck } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowRight,
+  ShieldCheck,
+  Clock,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
+import Image from "next/image";
 
-type SearchTab = "doctors" | "blood";
+interface Slide {
+  id: number;
+  titleEn: string;
+  titleBn: string;
+  subtitleEn: string;
+  subtitleBn: string;
+  discountBadge: string;
+  bgGradient: string;
+  ctaText: string;
+  ctaLink: string;
+  imageUrl: string;
+  accentIcon: React.ReactNode;
+}
 
 export default function HeroSection() {
-  const [activeTab, setActiveTab] = useState<SearchTab>("doctors");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const slides: Slide[] = [
+    {
+      id: 1,
+      titleEn: "Grand Monsoon Health Sale!",
+      titleBn: "মনসুন স্পেশাল স্বাস্থ্য অফার!",
+      subtitleEn:
+        "Get flat 15% off on chronic medicines & daily healthcare essentials.",
+      subtitleBn:
+        "নিয়মিত ওষুধ এবং দৈনন্দিন প্রয়োজনীয় স্বাস্থ্যসেবা পণ্যে ফ্ল্যাট ১৫% ছাড়।",
+      discountBadge: "Up to 50% Off",
+      bgGradient: "from-emerald-600 to-teal-800",
+      ctaText: "Shop Medicines",
+      ctaLink: "/category/medicine",
+      imageUrl:
+        "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=800&auto=format&fit=crop",
+      accentIcon: (
+        <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-emerald-300" />
+      ),
+    },
+    {
+      id: 2,
+      titleEn: "Instant Prescription Upload Offer",
+      titleBn: "প্রেসক্রিপশন আপলোড করলেই নিশ্চিত ছাড়!",
+      subtitleEn:
+        "Upload valid prescription and get extra 10% cashback + free delivery.",
+      subtitleBn:
+        "প্রেসক্রিপশন আপলোড করুন এবং অতিরিক্ত ১০% ক্যাশব্যাক ও ফ্রি ডেলিভারি পান।",
+      discountBadge: "Extra 10% Cash",
+      bgGradient: "from-blue-600 to-indigo-800",
+      ctaText: "Upload Now",
+      ctaLink: "/prescription",
+      imageUrl:
+        "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?q=80&w=800&auto=format&fit=crop",
+      accentIcon: (
+        <Clock className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-blue-300" />
+      ),
+    },
+    {
+      id: 3,
+      titleEn: "Vitamins & Supplements Booster",
+      titleBn: "ভিটামিন ও সাপ্লিমেন্ট বুস্টার!",
+      subtitleEn:
+        "Boost your immunity naturally. Buy 2 and get 1 absolutely free.",
+      subtitleBn:
+        "প্রাকৃতিক উপায়ে রোগ প্রতিরোধ ক্ষমতা বাড়ান। ২ টি কিনলে ১ টি ফ্রি!",
+      discountBadge: "Buy 2 Get 1 Free",
+      bgGradient: "from-amber-500 to-orange-700",
+      ctaText: "View Supplements",
+      ctaLink: "/category/supplement",
+      imageUrl:
+        "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=800&auto=format&fit=crop",
+      accentIcon: (
+        <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-amber-300" />
+      ),
+    },
+    {
+      id: 4,
+      titleEn: "Nurturing Baby & Mom Care",
+      titleBn: "মা ও শিশুর যত্ন নিন নিরাপদে",
+      subtitleEn:
+        "Dermatologically tested premium baby formulas and skin protection creams.",
+      subtitleBn:
+        "বিশেষজ্ঞদের দ্বারা পরীক্ষিত প্রিমিয়াম বেবি ফর্মুলা এবং স্কিন প্রটেকশন ক্রিম।",
+      discountBadge: "Flat 20% Off",
+      bgGradient: "from-pink-600 to-purple-800",
+      ctaText: "Shop Baby Care",
+      ctaLink: "/category/baby-mom-care",
+      imageUrl:
+        "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?q=80&w=800&auto=format&fit=crop",
+      accentIcon: (
+        <ShieldCheck className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 text-pink-300" />
+      ),
+    },
+  ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log(
-      `Searching for ${activeTab} in ${selectedDistrict} with query: ${searchQuery}`,
-    );
+  const [current, setCurrent] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+
+  const nextSlide = useCallback(() => {
+    setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+  }, [slides.length]);
+
+  const prevSlide = () => {
+    setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsPaused(true);
+    touchStartX.current = e.targetTouches[0].clientX;
+    touchEndX.current = e.targetTouches[0].clientX;
+    setTouchStartY(e.targetTouches[0].clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+
+    const diffX = touchStartX.current - touchEndX.current;
+    const diffY = (touchStartY || 0) - (touchEndX.current || 0);
+    const swipeThreshold = 40;
+
+    if (
+      Math.abs(diffX) > Math.abs(diffY || 0) &&
+      Math.abs(diffX) > swipeThreshold
+    ) {
+      if (diffX > swipeThreshold) {
+        nextSlide();
+      } else if (diffX < -swipeThreshold) {
+        prevSlide();
+      }
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+    setTouchStartY(null);
+    setIsPaused(false);
+  };
+
+  useEffect(() => {
+    if (!isPaused) {
+      timerRef.current = setInterval(() => {
+        nextSlide();
+      }, 3000);
+    }
+
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [isPaused, nextSlide]);
+
   return (
-    <section className="relative w-full py-16 lg:py-24 bg-white overflow-hidden">
-      {/* Background Graphic Elements - Simplified to reduce composite layer rendering stress */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40 z-0">
-        <div className="absolute top-12 left-10 w-72 h-72 bg-blue-100 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-red-50 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative max-w-4xl mx-auto text-center px-4 z-10">
-        {/* Live Emergency Ticker Tag */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider mb-6">
-          <ShieldAlert size={14} aria-hidden="true" />
-          <span>24/7 Centralized Live Network</span>
-        </div>
-
-        {/* Main Value Proposition - SEO Optimized with h1 */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.15] mb-6">
-          Your Unified Healthcare &amp; Emergency Gateway Across{" "}
-          <span className="text-red-600">64 Districts</span>
-        </h1>
-
-        <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto mb-10 font-medium">
-          Instantly locate verified medical specialists, track real-time
-          hospital bed availability, or connect with life-saving blood donors in
-          your area.
-        </p>
-
-        {/* 🛠️ WIDGET: INTERACTIVE SEARCH INTERFACE */}
-        <div className="w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-3 sm:p-4 text-left">
-          {/* Tab Selection Switches - Enhanced Accessibility via ARIA Roles */}
-          <div
-            className="flex gap-2 mb-4 border-b border-slate-100 pb-3"
-            role="tablist"
-            aria-label="Search categories"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "doctors"}
-              aria-controls="search-form-panel"
-              id="tab-doctors"
-              onClick={() => setActiveTab("doctors")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "doctors"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
+    <section
+      className="container py-4 md:py-8 overflow-hidden"
+      aria-roledescription="carousel"
+      aria-label="Promotional Offers Carousel"
+    >
+      <div
+        className="
+      relative
+      overflow-hidden
+      rounded-lg
+      sm:rounded-2xl
+      md:rounded-3xl
+      shadow-xl
+      bg-slate-900
+      w-full
+      h-62.5
+      sm:h-80
+      md:h-112.5
+    "
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Slides Track */}
+        <div
+          className="relative flex w-full h-full transition-transform duration-700 ease-out"
+          style={{ transform: `translateX(-${current * 100}%)` }}
+        >
+          {slides.map((slide, index) => (
+            <div
+              key={slide.id}
+              className={`min-w-full h-full relative overflow-hidden bg-linear-to-r ${slide.bgGradient}`}
+              aria-hidden={current !== index}
+              role="group"
+              aria-roledescription="slide"
+              aria-label={`Slide ${index + 1} of ${slides.length}: ${slide.titleEn}`}
             >
-              <UserCheck size={16} aria-hidden="true" />
-              <span>Find Doctors</span>
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "blood"}
-              aria-controls="search-form-panel"
-              id="tab-blood"
-              onClick={() => setActiveTab("blood")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "blood"
-                  ? "bg-red-700 text-white shadow-xs"
-                  : "text-slate-600 hover:text-red-700 hover:bg-red-50"
-              }`}
-            >
-              <Heart size={16} aria-hidden="true" />
-              <span>Emergency Blood</span>
-            </button>
-          </div>
+              <div className="absolute inset-0 bg-black/25 z-0" />
 
-          {/* Form Processing Core */}
-          <form
-            id="search-form-panel"
-            role="tabpanel"
-            aria-labelledby={`tab-${activeTab}`}
-            onSubmit={handleSearch}
-            className="flex flex-col md:flex-row gap-3"
-          >
-            {/* Input Element 1: District Selection Mapping */}
-            <div className="flex-1 min-w-50 relative">
-              <label htmlFor="district-select" className="sr-only">
-                Select District
-              </label>
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
-                <MapPin size={18} aria-hidden="true" />
-              </div>
-              <select
-                id="district-select"
-                value={selectedDistrict}
-                onChange={(e) => setSelectedDistrict(e.target.value)}
-                className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-600 appearance-none cursor-pointer"
-              >
-                <option value="">Select District...</option>
-                <option value="dhaka">Dhaka </option>
-                <option value="bogura">Bogura </option>
-                <option value="chittagong">Chittagong </option>
-                <option value="sylhet">Sylhet </option>
-              </select>
-              {/* Custom SVG chevron indicator to replace default browser design securely without breaking layouts */}
-              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-500">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M19 9l-7 7-7-7"
+              <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/30 to-transparent z-1 md:hidden" />
+              <div className="absolute inset-0 bg-linear-to-r from-black/40 via-transparent to-transparent z-1 hidden md:block" />
+
+              {/* Content */}
+              <div className="relative z-10 w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 items-center px-4 sm:px-6 md:px-10 lg:px-12 py-4">
+                {/* Text */}
+                <div className="flex flex-col justify-center items-start text-white space-y-2 md:space-y-4 max-w-lg">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/10 backdrop-blur-md rounded-full text-[10px] sm:text-xs font-black uppercase tracking-wider border border-white/20">
+                    {slide.accentIcon}
+                    {slide.discountBadge}
+                  </span>
+
+                  <div>
+                    <h2 className="text-sm sm:text-lg md:text-3xl lg:text-4xl font-extrabold leading-tight">
+                      {slide.titleEn}
+                    </h2>
+
+                    <p className="text-xs sm:text-sm md:text-lg font-semibold opacity-95 mt-1">
+                      {slide.titleBn}
+                    </p>
+                  </div>
+
+                  <div className="hidden sm:block opacity-90">
+                    <p className="text-xs md:text-base">{slide.subtitleEn}</p>
+
+                    <p className="text-xs md:text-sm mt-1">
+                      {slide.subtitleBn}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={slide.ctaLink}
+                    className="
+                  inline-flex
+                  items-center
+                  gap-2
+                  bg-white
+                  hover:bg-slate-100
+                  text-slate-900
+                  font-bold
+                  px-4
+                  md:px-6
+                  py-2
+                  md:py-3
+                  rounded-xl
+                  transition-all
+                "
+                  >
+                    {slide.ctaText}
+                    <ArrowRight className="w-4 h-4 text-emerald-600" />
+                  </Link>
+                </div>
+
+                {/* Desktop Image */}
+                <div className="hidden md:flex items-center justify-center h-full">
+                  <div className="w-[80%] h-80 rounded-2xl overflow-hidden border-4 border-white/10 shadow-2xl">
+                    <Image
+                      src={slide.imageUrl}
+                      alt={slide.titleEn}
+                      width={800}
+                      height={450}
+                      className="w-full h-full object-cover"
+                      priority={index === 0}
+                    />
+                  </div>
+                </div>
+
+                {/* Mobile Decoration */}
+                <div className="absolute right-0 bottom-0 w-1/4 h-1/3 md:hidden opacity-10 pointer-events-none">
+                  <Image
+                    height={200}
+                    width={200}
+                    src={slide.imageUrl}
+                    alt=""
+                    className="w-full h-full object-cover"
                   />
-                </svg>
+                </div>
               </div>
             </div>
-
-            {/* Input Element 2: Query Context String */}
-            <div className="flex-[1.5] relative">
-              <label htmlFor="search-query" className="sr-only">
-                Search specialized medical needs
-              </label>
-              <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-500">
-                <Search size={18} aria-hidden="true" />
-              </div>
-              <input
-                id="search-query"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={
-                  activeTab === "doctors"
-                    ? "Search Cardiologist, Neurologist, Gynecologist..."
-                    : "Search Blood Group (e.g., O+, A-, B+)..."
-                }
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm font-semibold focus:outline-hidden focus:ring-2 focus:ring-blue-600"
-              />
-            </div>
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              className={`w-full md:w-auto px-6 py-3 font-bold text-sm text-white rounded-xl cursor-pointer transition-all active:scale-[0.98] ${
-                activeTab === "blood"
-                  ? "bg-red-700 hover:bg-red-800"
-                  : "bg-slate-900 hover:bg-slate-800"
-              }`}
-            >
-              Search Matrix
-            </button>
-          </form>
+          ))}
         </div>
 
-        {/* Popular Quick Links Shortcuts */}
-        <div className="mt-6 flex flex-wrap justify-center items-center gap-3 text-xs sm:text-sm text-slate-600">
-          <span className="font-bold text-slate-800">Urgent Metrics:</span>
-          <a
-            href="/hospitals"
-            className="px-3 py-1.5 bg-slate-100 text-slate-800 font-semibold rounded-md hover:bg-blue-50 hover:text-blue-700 transition-colors"
-          >
-            ICU Availability Matrix
-          </a>
-          <a
-            href="/blood-network"
-            className="px-3 py-1.5 bg-slate-100 text-slate-800 font-semibold rounded-md hover:bg-red-50 hover:text-red-700 transition-colors"
-          >
-            Plasma Matching Hub
-          </a>
+        {/* Previous */}
+        <button
+          onClick={prevSlide}
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center p-2 rounded-full bg-black/40 text-white"
+          aria-label="Previous Slide"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        {/* Next */}
+        <button
+          onClick={nextSlide}
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 hidden sm:flex items-center justify-center p-2 rounded-full bg-black/40 text-white"
+          aria-label="Next Slide"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+
+        {/* Indicators */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrent(index)}
+              className={`h-2 rounded-full transition-all ${
+                current === index ? "w-6 bg-white" : "w-2 bg-white/40"
+              }`}
+            />
+          ))}
         </div>
       </div>
     </section>
