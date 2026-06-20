@@ -1,228 +1,323 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, Heart, Phone, Mail, MapPin } from "lucide-react";
+import {
+  Plus,
+  Heart,
+  Phone,
+  Mail,
+  MapPin,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  Clock,
+} from "lucide-react";
 
-export default function HealthFooter() {
+export default function MedicoFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
     <footer
-      className="w-full bg-[#111827] text-slate-300 border-t border-slate-800"
-      aria-label="Platform Footer"
+      className="w-full bg-foreground text-slate-300 border-t border-slate-700/50 font-sans"
+      aria-label="Medico Platform Footer"
     >
-      {/* PRIMARY LINK SECTIONS */}
+      {/* ১. ট্রাস্ট ও ভ্যালু প্রোপোজিশন সেকশন (Value Propositions) */}
+      <div className="border-b border-slate-700/50 bg-secoundary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Super Fast Delivery */}
+          <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-700/30 hover:bg-slate-700/50 transition-colors duration-200">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+              <Truck size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                Super Fast Delivery
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Lakhs of medicines delivered safely
+              </p>
+            </div>
+          </div>
+
+          {/* 100% Genuine Medicine */}
+          <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-700/30 hover:bg-slate-700/50 transition-colors duration-200">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+              <ShieldCheck size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                100% Genuine Medicine
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Sourced directly from manufacturers
+              </p>
+            </div>
+          </div>
+
+          {/* Easy Returns & Refunds */}
+          <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-700/30 hover:bg-slate-700/50 transition-colors duration-200">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+              <RotateCcw size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">
+                Easy Returns & Refunds
+              </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Hassle-free return policy
+              </p>
+            </div>
+          </div>
+
+          {/* 24/7 Support Desk */}
+          <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-700/30 hover:bg-slate-700/50 transition-colors duration-200">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+              <Clock size={20} aria-hidden="true" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">24/7 Support Desk</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Chat with registered pharmacists
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ২. মেইন ফুটার লিংক সেকশন (Primary Links) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-        {/* BRANDING COLUMN */}
+        {/* ব্র্যান্ড পরিচিতি ও হেল্পলাইন */}
         <div className="space-y-4">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl font-black tracking-tight text-white rounded focus:outline-hidden focus:ring-2 focus:ring-red-500 p-1 w-fit"
-            aria-label="BD Central Health Home"
+            className="flex items-center gap-1 text-2xl font-black tracking-tight text-white rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 p-1 w-fit animate-none"
+            aria-label="Medico Home"
           >
-            <div className="p-1.5 rounded-lg bg-red-600 text-white">
-              <Activity size={18} aria-hidden="true" />
-            </div>
-            <span>
-              BD<span className="text-red-500">Central</span>Health
+            <span className="text-emerald-400 flex items-center">
+              M
+              <Plus
+                size={18}
+                className="stroke-4 text-red-400 -mx-0.5 animate-pulse"
+                aria-hidden="true"
+              />
+              dico
             </span>
           </Link>
           <p className="text-sm text-slate-400 leading-relaxed">
-            Connecting medical specialists, tracking real-time hospital bed
-            availability, and mapping verified blood donors across all 64
-            districts under one centralized gateway.
+            Your trusted digital pharmacy in Bangladesh. Sourcing 100% genuine
+            healthcare essentials, prescription drugs, and baby care formulas,
+            delivered directly to your doorstep.
           </p>
           <div className="pt-2">
             <a
-              href="tel:999"
-              className="inline-flex items-center gap-2 bg-red-600/10 hover:bg-red-600/20 text-red-400 font-bold px-4 py-2 rounded-lg text-xs uppercase border border-red-500/20 transition-all focus:outline-hidden focus:ring-2 focus:ring-red-500"
+              href="tel:16263"
+              className="inline-flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold px-4 py-2.5 rounded-xl text-xs uppercase border border-emerald-500/20 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
-              <Heart size={14} className="animate-pulse" aria-hidden="true" />
-              <span>Emergency Helpline: 999</span>
+              <Heart
+                size={14}
+                className="animate-pulse text-red-400"
+                aria-hidden="true"
+              />
+              <span>Pharmacist Support: 16263</span>
             </a>
           </div>
         </div>
 
-        {/* CORE SERVICES COLUMN */}
-        <div>
-          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-500 pl-2">
-            Core Services
+        {/* শপ ক্যাটাগরি কলাম */}
+        <nav aria-label="Footer Shop Categories">
+          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-emerald-500 pl-2">
+            Shop Categories
           </p>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2.5 text-sm">
             <li>
               <Link
-                href="/doctors"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/category/medicine"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Doctor Directory
+                Prescription Drugs
               </Link>
             </li>
             <li>
               <Link
-                href="/hospitals"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/category/healthcare"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Hospital Seat Tracker
+                Diabetic Care
               </Link>
             </li>
             <li>
               <Link
-                href="/blood-network"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/category/baby-mom-care"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Blood Donor Network
+                Baby & Mom Care
               </Link>
             </li>
             <li>
               <Link
-                href="/ambulances"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/category/supplement"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Emergency Ambulance
+                Vitamins & Supplements
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/category/beauty"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
+              >
+                Personal Care
               </Link>
             </li>
           </ul>
-        </div>
+        </nav>
 
-        {/* REGIONAL HUBS COLUMN */}
-        <div>
-          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-500 pl-2">
-            Regional Networks
+        {/* কাস্টমার সার্ভিস কলাম */}
+        <nav aria-label="Customer Services Links">
+          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-emerald-500 pl-2">
+            Customer Services
           </p>
-          <ul className="space-y-2 text-sm">
+          <ul className="space-y-2.5 text-sm">
             <li>
               <Link
-                href="/districts/dhaka"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/prescription"
+                className="text-emerald-400 font-bold hover:text-emerald-300 transition-colors focus:outline-none focus:underline"
               >
-                Dhaka Division
+                Upload Prescription
               </Link>
             </li>
             <li>
               <Link
-                href="/districts/chittagong"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/orders/track"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Chittagong Division
+                Track Your Order
               </Link>
             </li>
             <li>
               <Link
-                href="/districts/sylhet"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/refund-policy"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Sylhet Division
+                Refunds & Returns
               </Link>
             </li>
             <li>
               <Link
-                href="/districts/bogura"
-                className="text-slate-400 hover:text-white transition-colors focus:outline-hidden focus:underline"
+                href="/store-locator"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                Bogura Hub
+                Our Store Locations
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/faq"
+                className="text-slate-400 hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
+              >
+                Frequently Asked Questions
               </Link>
             </li>
           </ul>
-        </div>
+        </nav>
 
-        {/* CONTACT & SUPPORT COLUMN */}
+        {/* কন্টাক্ট ও সাপোর্ট কলাম */}
         <div className="space-y-3">
-          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-red-500 pl-2">
+          <p className="text-sm font-bold text-white uppercase tracking-wider mb-4 border-l-2 border-emerald-500 pl-2">
             Support &amp; Contact
           </p>
-          <ul className="space-y-2.5 text-sm text-slate-400">
+          <ul className="space-y-3 text-sm text-slate-400">
             <li className="flex items-start gap-2.5">
               <MapPin
                 size={16}
-                className="text-red-500 shrink-0 mt-0.5"
+                className="text-emerald-400 shrink-0 mt-0.5"
                 aria-hidden="true"
               />
-              <span>Dhaka, Bangladesh</span>
+              <span>Gulshan, Dhaka, Bangladesh</span>
             </li>
             <li className="flex items-center gap-2.5">
               <Mail
                 size={16}
-                className="text-red-500 shrink-0"
+                className="text-emerald-400 shrink-0"
                 aria-hidden="true"
               />
               <a
-                href="mailto:support@bdcentralhealth.com"
-                className="hover:text-white focus:outline-hidden focus:underline"
+                href="mailto:support@medico.com.bd"
+                className="hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                support@bdcentralhealth.com
+                support@medico.com.bd
               </a>
             </li>
             <li className="flex items-center gap-2.5">
               <Phone
                 size={16}
-                className="text-red-500 shrink-0"
+                className="text-emerald-400 shrink-0"
                 aria-hidden="true"
               />
               <a
-                href="tel:+880123456789"
-                className="hover:text-white focus:outline-hidden focus:underline"
+                href="tel:+8809612MEDICO"
+                className="hover:text-emerald-400 transition-colors focus:outline-none focus:underline"
               >
-                +880 1234-567890
+                +880 9612-MEDICO (633426)
               </a>
             </li>
           </ul>
         </div>
       </div>
 
-      {/* COMPLIANCE & LEGAL BOTTOM BAR */}
-      <div className="border-t border-slate-800/80 bg-[#0b0f19]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>
-            &copy; {currentYear} BD Central Health Network. All rights reserved.
-          </p>
+      {/* ৩. লিগ্যাল কপিরাইট ও পেমেন্ট পার্টনার সেকশন (Bottom Bar) */}
+      <div className="border-t border-slate-700/50 bg-[#0a0f1a]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="space-y-1 text-center md:text-left">
+            <p>
+              &copy; {currentYear} Medico Digital Healthcare Limited. DGDA Drug
+              License No: Under-process. All rights reserved.
+            </p>
+          </div>
 
-          {/* SOCIAL LINKS AREA */}
-          <div className="flex items-center gap-4">
-            {/* GitHub Link */}
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener"
-              className="text-slate-400 hover:text-white transition-colors p-1 rounded focus:outline-hidden focus:ring-2 focus:ring-red-500"
-              aria-label="Visit our GitHub repository"
-            >
-              <svg
-                className="w-4 h-4 fill-current"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                aria-hidden="true"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.008.069-.008 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </a>
+          {/* সিকিউর পেমেন্ট মেথড এবং সোশ্যাল লিংক */}
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 mr-2 hidden sm:inline">
+              Secure Payments: bKash / Cards
+            </span>
 
-            {/* LinkedIn Link */}
-            <a
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener"
-              className="text-slate-400 hover:text-white transition-colors p-1 rounded focus:outline-hidden focus:ring-2 focus:ring-red-500"
-              aria-label="Visit our LinkedIn profile"
-            >
-              <svg
-                className="w-4 h-4 fill-current"
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                aria-hidden="true"
+            <div className="flex items-center gap-3">
+              <a
+                href="https://facebook.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition-colors p-1.5 bg-slate-800 rounded-full border border-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                aria-label="Visit Medico on Facebook"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </a>
+                <svg
+                  className="w-4 h-4 fill-current"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
+                </svg>
+              </a>
+
+              <a
+                href="https://linkedin.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-slate-400 hover:text-emerald-400 transition-colors p-1.5 bg-slate-800 rounded-full border border-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                aria-label="Visit Medico on LinkedIn"
+              >
+                <svg
+                  className="w-4 h-4 fill-current"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </a>
+            </div>
           </div>
         </div>
       </div>
