@@ -21,28 +21,30 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// Medico ব্র্যান্ডের জন্য SEO অপ্টিমাইজড মেটাডেটা
 export const metadata: Metadata = {
-  title: "BD Central Health Network | 64 Districts Emergency Hub",
+  title: "Medico | Online Medicine & Organic Health Food Delivery in BD",
   description:
-    "A centralized platform tracking doctor directories, hospital seat availability, blood donor networks, and emergency ambulances across 64 districts in Bangladesh.",
+    "Order prescription medicines, healthcare products, organic honey, dry fruits, and healthy snacks online from Medico. Trusted pharmacy and wellness shop delivering across Bangladesh.",
   keywords: [
-    "BD Central Health",
-    "Bangladesh health network",
-    "doctor directory",
-    "hospital seat tracker",
-    "blood donor network",
-    "emergency ambulance",
+    "Medico",
+    "online pharmacy Bangladesh",
+    "buy medicine online Dhaka",
+    "organic honey shop",
+    "dry fruits price in BD",
+    "healthy foods online",
+    "OTC medicines delivery",
   ],
   authors: [{ name: "Zamirul Kabir" }],
   openGraph: {
-    title: "BD Central Health Network | 64 Districts Emergency Hub",
+    title: "Medico | Online Medicine & Organic Health Food Delivery in BD",
     description:
-      "A centralized platform tracking doctor directories, hospital seat availability, blood donor networks, and emergency ambulances across 64 districts in Bangladesh.",
-    url: "https://zamirulkabir.com", // Update with your actual domain when ready
-    siteName: "BD Central Health",
+      "Order prescription medicines, healthcare products, organic honey, dry fruits, and healthy snacks online from Medico. Trusted pharmacy and wellness shop delivering across Bangladesh.",
+    url: "https://medico.com.bd", // ডোমেইন অনুযায়ী পরবর্তীতে পরিবর্তন করতে পারবেন
+    siteName: "Medico",
     images: [
       {
-        url: "https://ibb.co.com/2YKmsVf2",
+        url: "https://ibb.co.com/2YKmsVf2", // আপনার লোগো বা ওজি ইমেজের লিংক দিন
         width: 1200,
         height: 630,
       },
@@ -51,9 +53,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "BD Central Health Network | 64 Districts Emergency Hub",
+    title: "Medico | Online Medicine & Organic Health Food Delivery in BD",
     description:
-      "A centralized platform tracking doctor directories, hospital seat availability, blood donor networks, and emergency ambulances across 64 districts in Bangladesh.",
+      "Order prescription medicines, healthcare products, organic honey, dry fruits, and healthy snacks online from Medico.",
     images: "https://ibb.co.com/2YKmsVf2",
   },
 };
@@ -69,10 +71,10 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
       >
-        {/* Dynamic sub-layouts (like your CommonLayout) will render cleanly here */}
+        {/* সমস্ত পেজে এই চিলড্রেন রেন্ডার হবে */}
         {children}
 
-        {/* Google Analytics 4 Setup */}
+        {/* Google Analytics 4 Setup (আপনার প্রয়োজন অনুযায়ী ট্র্যাকিং আইডি বদলে নিতে পারেন) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-242fdsf2"
           strategy="afterInteractive"
