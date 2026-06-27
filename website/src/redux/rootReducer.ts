@@ -5,6 +5,7 @@ import { baseApi } from "./api/baseApi";
 import sidebarSlice from "./features/sidebarSlice";
 import otpSlice from "./features/otpSlice";
 import authSlice from "./features/auth/authSlice";
+import cartSlice from "./features/cartSlice";
 
 const persistConfig = {
   key: "root",
@@ -14,12 +15,14 @@ const persistConfig = {
 const persistedSideBarTree = persistReducer(persistConfig, sidebarSlice);
 const persistedAuth = persistReducer(persistConfig, authSlice);
 const persistedOtp = persistReducer(persistConfig, otpSlice);
+const persistedCart = persistReducer(persistConfig, cartSlice);
 
 // Combine all reducers
 export const rootReducer = combineReducers({
   [baseApi.reducerPath]: baseApi.reducer,
   auth: persistedAuth,
   otpTree: persistedOtp,
+  cartTree: persistedCart,
   adminTree: persistedSideBarTree,
 });
 
