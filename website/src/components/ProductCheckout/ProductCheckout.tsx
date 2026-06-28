@@ -59,6 +59,17 @@ interface CheckoutFormData {
   paymentMethod: "cod" | "online";
 }
 
+// Generate order ID
+const generateOrderId = () => {
+  const date = new Date();
+  const dateStr =
+    date.getFullYear() +
+    String(date.getMonth() + 1).padStart(2, "0") +
+    String(date.getDate()).padStart(2, "0");
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `ORD-${dateStr}-${random}`;
+};
+
 // Components
 const DeliveryMethodCard: React.FC<{
   method: "inside-dhaka" | "outside-dhaka";
@@ -69,6 +80,7 @@ const DeliveryMethodCard: React.FC<{
   description: string;
 }> = ({ selected, onSelect, label, price, description }) => (
   <button
+    type="button"
     onClick={onSelect}
     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
       selected
@@ -105,6 +117,7 @@ const PaymentMethodCard: React.FC<{
   subDescription?: string;
 }> = ({ selected, onSelect, icon, title, description, subDescription }) => (
   <button
+    type="button"
     onClick={onSelect}
     className={`w-full p-4 rounded-xl border-2 transition-all text-left ${
       selected
@@ -247,6 +260,38 @@ export default function ProductCheckout() {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
+      // Generate order data
+      const orderId = generateOrderId();
+      const orderData = {
+        orderId,
+        customerName: formData.fullName,
+        customerEmail: formData.emailAddress || "N/A",
+        customerPhone: formData.mobileNumber,
+        shippingAddress: formData.fullAddress,
+        orderDate: new Date(),
+        items: cartItems.map((item: CartItem) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          image: item.image,
+          packSizeLabel: item.packSizeLabel,
+        })),
+        subtotal,
+        discount: totalDiscount,
+        deliveryFee,
+        total: totalPayable,
+        paymentMethod: formData.paymentMethod,
+        deliveryMethod:
+          formData.deliveryMethod === "inside-dhaka"
+            ? "Inside Dhaka"
+            : "Outside Dhaka",
+        optionalNote: formData.optionalNote,
+      };
+
+      // Store order data in sessionStorage for the confirmation page
+      sessionStorage.setItem("orderData", JSON.stringify(orderData));
+
       // Clear cart after successful order
       dispatch(CLEAR_CART());
 
@@ -254,20 +299,17 @@ export default function ProductCheckout() {
         "🎉 Order placed successfully! Thank you for shopping with us.",
         {
           position: "bottom-right",
-          autoClose: 5000,
+          autoClose: 3000,
         },
       );
 
-      // Redirect to order confirmation or home
-      setTimeout(() => {
-        router.push("/order-confirmation");
-      }, 2000);
+      // Redirect directly to confirmation page
+      router.push("/order-confirmation");
     } catch (error) {
       toast.error("Failed to place order. Please try again.", {
         position: "bottom-right",
         autoClose: 3000,
       });
-    } finally {
       setIsOrderPlacing(false);
     }
   };
@@ -529,6 +571,7 @@ export default function ProductCheckout() {
                       </p>
                       <div className="flex items-center gap-2 mt-1">
                         <button
+                          type="button"
                           onClick={() =>
                             handleUpdateQuantity(item, item.quantity - 1)
                           }
@@ -540,6 +583,7 @@ export default function ProductCheckout() {
                           {item.quantity}
                         </span>
                         <button
+                          type="button"
                           onClick={() =>
                             handleUpdateQuantity(item, item.quantity + 1)
                           }
@@ -548,6 +592,7 @@ export default function ProductCheckout() {
                           <Plus size={12} className="text-slate-500" />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleRemoveItem(item)}
                           className="p-0.5 rounded hover:bg-red-100 transition-colors ml-1"
                         >
@@ -621,6 +666,7 @@ export default function ProductCheckout() {
                     />
                   </div>
                   <button
+                    type="button"
                     onClick={handleApplyCoupon}
                     disabled={isCouponApplied || !couponCode.trim()}
                     className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-bold text-sm rounded-lg transition-all whitespace-nowrap"
@@ -636,20 +682,27 @@ export default function ProductCheckout() {
               </div>
 
               {/* Place Order Button */}
-              <button
-                onClick={handlePlaceOrder}
-                disabled={isOrderPlacing}
-                className="w-full mt-4 py-3.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-extrabold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
-              >
+              <div className="mt-4">
                 {isOrderPlacing ? (
-                  <>
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-3.5 bg-slate-300 text-white font-extrabold rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+                  >
                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                     Processing...
-                  </>
+                  </button>
                 ) : (
-                  `Place Order ${formData.paymentMethod === "cod" ? "(COD)" : ""}`
+                  <button
+                    type="button"
+                    onClick={handlePlaceOrder}
+                    className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    Place Order{" "}
+                    {formData.paymentMethod === "cod" ? "(COD)" : ""}
+                  </button>
                 )}
-              </button>
+              </div>
 
               <p className="text-[10px] text-slate-400 text-center mt-3">
                 By placing order you agree to our Terms & Conditions
