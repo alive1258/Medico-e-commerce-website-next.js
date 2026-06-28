@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Star, Plus } from "lucide-react";
-import { Product } from "@/src/utils/data/products";
+import { Product } from "@/src/types/product";
 
 interface ProductCardProps {
   product: Product;

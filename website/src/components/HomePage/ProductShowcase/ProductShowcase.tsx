@@ -1,23 +1,20 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// components/ProductShowcase.tsx
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  ShoppingCart,
-  Check,
   Sparkles,
+  ShoppingCart,
 } from "lucide-react";
 import Link from "next/link";
-
+import { useSelector } from "react-redux";
 import ProductCard from "./ProductCard";
-import { Product, PRODUCTS_DATA } from "@/src/utils/data/products";
-
-// ৩.১ ক্যাটাগরি ও প্রোডাক্ট ডাটাবেস প্রস্তুত করা
-// types/product.ts
+import PRODUCTS from "@/src/utils/data/products";
 
 export default function ProductShowcase() {
-  // --- কাস্টম ক্যারোসেল স্ক্রলিং স্টেট ও রেডি-মেড রিলিজ ---
   const categoriesList = [
     "Best Selling Products",
     "Newly Launched Items",
@@ -29,26 +26,13 @@ export default function ProductShowcase() {
     "All-in-One Care Deals",
   ];
 
-  // প্রতিটি ক্যারোসেলের জন্য আলাদা রেফ ডিক্লেয়ার করা
   const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const cartCount = useSelector((state: any) => state?.cart?.totalQuantity);
 
-  // কার্ট এবং টোস্ট নোটিফিকেশন স্টেট
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [cartCount, setCartCount] = useState<number>(0);
-
-  // ডিসপ্লে টোস্ট নোটিফিকেশন
-  const triggerToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
-  };
-
-  // স্ক্রলিং হ্যান্ডলার (Smoothly scroll left and right)
   const handleScroll = (categoryName: string, direction: "left" | "right") => {
     const container = scrollRefs.current[categoryName];
     if (container) {
-      const scrollAmount = 300; // ক্যারোসেলের স্ক্রলিং স্পিড
+      const scrollAmount = 300;
       container.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -56,20 +40,10 @@ export default function ProductShowcase() {
     }
   };
 
-  // কার্টে আইটেম যুক্ত করার ইন্টারঅ্যাকশন
-  const addToCart = (
-    product: Product,
-    e: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    e.stopPropagation();
-    setCartCount((prev) => prev + 1);
-    triggerToast(`Added ${product.name} to Cart successfully! 🛒`);
-  };
-
   return (
     <section className="bg-slate-50 min-h-screen py-10 font-sans">
       <div className="container">
-        {/* মেডিকো প্রমোশনাল টপ বার (গ্লোবাল কার্ট রিয়েল-টাইম ট্র্যাকার) */}
+        {/* Promotional Top Bar */}
         <div className="bg-emerald-600 text-white rounded-2xl p-4 sm:p-6 mb-10 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-500 rounded-xl">
@@ -88,7 +62,7 @@ export default function ProductShowcase() {
           <div className="flex items-center gap-3 bg-emerald-700/60 px-4 py-2.5 rounded-xl border border-emerald-500/30">
             <ShoppingCart size={18} className="text-emerald-300" />
             <span className="text-xs uppercase tracking-wider font-black">
-              Your Cart Count:
+              Cart Items:
             </span>
             <span className="bg-red-500 text-white font-extrabold text-sm px-2.5 py-0.5 rounded-full animate-bounce">
               {cartCount}
@@ -96,19 +70,21 @@ export default function ProductShowcase() {
           </div>
         </div>
 
-        {/* ৩.২ ডাইনামিক ক্যারোসেল লুপ (ক্যাটাগরি ভিত্তিক রেন্ডারিং) */}
+        {/* Dynamic Category Carousels */}
         <div className="space-y-12">
           {categoriesList.map((category) => {
-            const filteredProducts = PRODUCTS_DATA.filter(
+            const filteredProducts = PRODUCTS.filter(
               (p) => p.category === category,
             );
+
+            if (filteredProducts.length === 0) return null;
 
             return (
               <div
                 key={category}
                 className="md:bg-white p-0.5 md:p-5 md:rounded-2xl md:shadow-sm md:border md:border-slate-100 relative group"
               >
-                {/* ক্যাটাগরি হেডার - বামে নাম এবং ডানে ক্যারোসেল নেভিগেশন বাটন */}
+                {/* Category Header */}
                 <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-50">
                   <div className="space-y-1">
                     <h3 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-2">
@@ -119,7 +95,7 @@ export default function ProductShowcase() {
                     </p>
                   </div>
 
-                  {/* নেভিগেশন কন্ট্রোল্স */}
+                  {/* Navigation Controls */}
                   <div className="md:flex items-center gap-3">
                     <Link
                       href={`/category/${category.replace(/\s+/g, "-").toLowerCase()}`}
@@ -148,7 +124,7 @@ export default function ProductShowcase() {
                   </div>
                 </div>
 
-                {/* ৩.৩ ক্যারোসেল প্রোডাক্ট ট্র্যাকার */}
+                {/* Product Carousel */}
                 <div
                   ref={(el) => {
                     scrollRefs.current[category] = el;
@@ -160,11 +136,7 @@ export default function ProductShowcase() {
                   }}
                 >
                   {filteredProducts.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      addToCart={addToCart}
-                    />
+                    <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
               </div>
@@ -172,16 +144,6 @@ export default function ProductShowcase() {
           })}
         </div>
       </div>
-
-      {/* ৩.৪ ইন্টারঅ্যাক্টিভ টোস্ট নোটিফিকেশন */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-3 animate-slide-up">
-          <div className="p-1 bg-emerald-500 rounded-lg text-white">
-            <Check size={14} className="stroke-3" />
-          </div>
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </section>
   );
 }

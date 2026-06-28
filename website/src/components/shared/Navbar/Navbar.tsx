@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// components/Navbar.tsx (Updated floating cart button section)
 "use client";
 
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -16,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { sidebarToggle } from "@/src/redux/features/sidebarSlice";
+import CartSidebar from "./CartSidebar";
 
 export const MEDICO_MEDICINE_CATEGORIES = [
   { id: "home", nameEn: "Home" },
@@ -41,16 +44,17 @@ export const MEDICO_MEDICINE_CATEGORIES = [
 export default function Navbar() {
   const dispatch = useDispatch();
 
-  const isCartOpen = useSelector((state: any) => state.adminTree.sidebarStatus);
+  const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
+
+  // Calculate unique product count (different pack sizes count as different products)
+  const uniqueProductCount = cartItems.length;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLAnchorElement>(null);
 
-  const cartCount = 1;
   const wishlistCount = 0;
 
   const scroll = (direction: "left" | "right") => {
@@ -63,19 +67,9 @@ export default function Navbar() {
     }
   };
 
-  useEffect(() => {
-    if (activeRef.current) {
-      activeRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
-    }
-  }, [pathname]);
-
   return (
     <>
-      {/* ==================== header ==================== */}
+      {/* ==================== HEADER ==================== */}
       <header className="w-full bg-white text-slate-800 border-b border-slate-200 sticky top-0 z-50 shadow-sm">
         <div className="container h-16 flex items-center justify-between gap-4">
           {/* Logo */}
@@ -135,9 +129,9 @@ export default function Navbar() {
               className="relative p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-all"
             >
               <ShoppingBag size={22} />
-              {cartCount > 0 && (
+              {uniqueProductCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
-                  {cartCount}
+                  {uniqueProductCount}
                 </span>
               )}
             </button>
@@ -151,7 +145,7 @@ export default function Navbar() {
               <span className="hidden sm:inline">Login</span>
             </Link>
 
-            {/* Hamburger Menu (Mobile only) */}
+            {/* Hamburger Menu */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               className="p-2 md:hidden rounded-xl hover:bg-slate-100 text-slate-600 transition-all"
@@ -161,7 +155,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ====================  (Scroller) ==================== */}
+        {/* ==================== CATEGORY SCROLLER ==================== */}
         <div className="w-full bg-slate-50 border-t border-slate-200">
           <div className="max-w-7xl mx-auto px-4 relative flex items-center group">
             <button
@@ -208,8 +202,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ==================== FLOATING SIDE CART BUTTON (Desktop Only) ==================== */}
-
+      {/* ==================== FLOATING SIDE CART BUTTON ==================== */}
       <button
         onClick={() => dispatch(sidebarToggle())}
         className="hidden md:flex fixed right-0 top-1/2 -translate-y-1/2 z-40 bg-emerald-600 text-white flex-col items-center justify-center gap-1 p-3 rounded-l-2xl shadow-2xl hover:bg-emerald-700 transition-all group border border-emerald-500 border-r-0"
@@ -219,9 +212,10 @@ export default function Navbar() {
             size={22}
             className="group-hover:scale-110 transition-transform"
           />
-          {cartCount > 0 && (
+          {/* Show unique product count, not total quantity */}
+          {uniqueProductCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
-              {cartCount}
+              {uniqueProductCount}
             </span>
           )}
         </div>
@@ -230,7 +224,7 @@ export default function Navbar() {
         </span>
       </button>
 
-      {/* ==================== MOBILE MENU SIDE DRAWER (বাম থেকে ডানে) ==================== */}
+      {/* ==================== MOBILE MENU SIDE DRAWER ==================== */}
       <div
         className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
           isMobileMenuOpen
@@ -303,79 +297,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ==================== SHOPPING CART SIDE DRAWER (ডান থেকে বামে) ==================== */}
-      <div
-        className={`fixed inset-0 z-50 transition-all duration-100 ${
-          isCartOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
-      >
-        <div
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={() => dispatch(sidebarToggle())}
-        />
-
-        <div
-          className={`absolute inset-y-0 right-0 w-full max-w-md bg-white border-l border-slate-200 flex flex-col p-6 shadow-2xl transition-transform duration-100 ease-in-out ${
-            isCartOpen ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-            <span className="text-xl font-black text-slate-900 flex items-center gap-2">
-              <ShoppingBag className="text-emerald-600" /> আমার কার্ট (
-              {cartCount})
-            </span>
-            <button
-              onClick={() => dispatch(sidebarToggle())}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-all"
-            >
-              <X size={22} />
-            </button>
-          </div>
-
-          {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto no-scrollbar space-y-4">
-            {cartCount > 0 ? (
-              <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center text-xs font-bold text-slate-400 border border-slate-200">
-                  Med
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">
-                    Napa Extend 665mg
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">
-                    পরিমাণ: 1 × $1.20
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500 text-center py-8">
-                আপনার কার্টটি খালি আছে।
-              </p>
-            )}
-          </div>
-
-          {/* Footer */}
-          <div className="pt-4 border-t border-slate-100 space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-500 font-semibold">
-                সর্বমোট মূল্য:
-              </span>
-              <span className="text-xl font-black text-slate-900">$1.20</span>
-            </div>
-            <Link
-              href="/checkout"
-              onClick={() => dispatch(sidebarToggle())}
-              className="block w-full text-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-md"
-            >
-              অর্ডার সম্পন্ন করুন
-            </Link>
-          </div>
-        </div>
-      </div>
+      {/* ==================== CART SIDEBAR ==================== */}
+      <CartSidebar />
     </>
   );
 }

@@ -1,15 +1,20 @@
+// redux/features/cartSlice.ts
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
-// ১. কার্ট আইটেমের জন্য টাইপ ডিফাইন করা
 export interface CartItem {
-  id: string | number;
+  id: string;
+  productId: string;
   name: string;
   price: number;
   quantity: number;
+  packSizeId: string;
+  packSizeLabel: string;
   image?: string;
+  maxQuantity?: number;
+  discount?: number;
+  originalPrice?: number;
 }
 
-// ২. কার্ট স্টেটের জন্য টাইপ বা ইন্টারফেস ডিফাইন করা
 interface CartState {
   cartItems: CartItem[];
   totalAmount: number;
@@ -37,27 +42,43 @@ const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
-    ADD_TO_CART: (state, action: PayloadAction<Omit<CartItem, "quantity">>) => {
+    ADD_TO_CART: (state, action: PayloadAction<CartItem>) => {
       const newItem = action.payload;
       const existingItem = state.cartItems.find(
-        (item) => item.id === newItem.id,
+        (item) =>
+          item.id === newItem.id && item.packSizeId === newItem.packSizeId,
       );
 
       if (!existingItem) {
         state.cartItems.push({ ...newItem, quantity: 1 });
       } else {
+        if (
+          newItem.maxQuantity &&
+          existingItem.quantity >= newItem.maxQuantity
+        ) {
+          return;
+        }
         existingItem.quantity++;
       }
       calculateTotals(state);
+      // Log for debugging
+      console.log("Cart after ADD:", state.cartItems);
     },
 
-    REMOVE_FROM_CART: (state, action: PayloadAction<string | number>) => {
-      const id = action.payload;
-      const existingItem = state.cartItems.find((item) => item.id === id);
+    REMOVE_FROM_CART: (
+      state,
+      action: PayloadAction<{ id: string; packSizeId: string }>,
+    ) => {
+      const { id, packSizeId } = action.payload;
+      const existingItem = state.cartItems.find(
+        (item) => item.id === id && item.packSizeId === packSizeId,
+      );
 
       if (existingItem) {
         if (existingItem.quantity === 1) {
-          state.cartItems = state.cartItems.filter((item) => item.id !== id);
+          state.cartItems = state.cartItems.filter(
+            (item) => !(item.id === id && item.packSizeId === packSizeId),
+          );
         } else {
           existingItem.quantity--;
         }
@@ -65,9 +86,14 @@ const cartSlice = createSlice({
       calculateTotals(state);
     },
 
-    DELETE_ITEM: (state, action: PayloadAction<string | number>) => {
-      const id = action.payload;
-      state.cartItems = state.cartItems.filter((item) => item.id !== id);
+    DELETE_ITEM: (
+      state,
+      action: PayloadAction<{ id: string; packSizeId: string }>,
+    ) => {
+      const { id, packSizeId } = action.payload;
+      state.cartItems = state.cartItems.filter(
+        (item) => !(item.id === id && item.packSizeId === packSizeId),
+      );
       calculateTotals(state);
     },
 
@@ -76,9 +102,36 @@ const cartSlice = createSlice({
       state.totalAmount = 0;
       state.totalQuantity = 0;
     },
+
+    UPDATE_QUANTITY: (
+      state,
+      action: PayloadAction<{
+        id: string;
+        packSizeId: string;
+        quantity: number;
+      }>,
+    ) => {
+      const { id, packSizeId, quantity } = action.payload;
+      const item = state.cartItems.find(
+        (item) => item.id === id && item.packSizeId === packSizeId,
+      );
+      if (item && quantity > 0) {
+        if (item.maxQuantity && quantity > item.maxQuantity) {
+          item.quantity = item.maxQuantity;
+        } else {
+          item.quantity = quantity;
+        }
+      }
+      calculateTotals(state);
+    },
   },
 });
 
-export const { ADD_TO_CART, REMOVE_FROM_CART, DELETE_ITEM, CLEAR_CART } =
-  cartSlice.actions;
+export const {
+  ADD_TO_CART,
+  REMOVE_FROM_CART,
+  DELETE_ITEM,
+  CLEAR_CART,
+  UPDATE_QUANTITY,
+} = cartSlice.actions;
 export default cartSlice.reducer;

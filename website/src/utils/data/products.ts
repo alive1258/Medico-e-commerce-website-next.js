@@ -1,6 +1,5 @@
-// data/products.ts
+import { PackSize, Product } from "@/src/types/product";
 
-// Helper function to generate slug from name
 const generateSlug = (name: string, id: string): string => {
   return (
     name
@@ -9,28 +8,87 @@ const generateSlug = (name: string, id: string): string => {
       .replace(/^-+|-+$/g, "") + `-${id}`
   );
 };
-// types/product.ts
-export interface Product {
-  id: string;
-  slug: string; // Add slug field
-  name: string;
-  strength?: string;
-  brand: string;
-  originalPrice: number;
-  currentPrice: number;
-  discount: number;
-  deliveryTime?: string;
-  category: string;
-  imageUrl: string;
-  rating?: number;
-  reviewsCount?: number;
-  inStock?: boolean;
-  description?: string;
-  images?: string[]; // For multiple product images
-  specifications?: Record<string, string>;
-  benefits?: string[];
-  usage?: string;
-}
+
+const generatePackSizes = (
+  productId: string,
+  basePrice: number,
+  baseDiscount: number = 0,
+): PackSize[] => {
+  const quantities = [10, 20, 30, 40, 50];
+  const stripCounts = [1, 2, 3, 4, 5];
+  const pricePerUnit = basePrice / 10;
+
+  return quantities.map((quantity, index) => {
+    const stripCount = stripCounts[index];
+    const totalOriginalPrice = pricePerUnit * quantity;
+
+    let discount = baseDiscount;
+    if (quantity >= 50) discount = Math.min(baseDiscount + 11, 30);
+    else if (quantity >= 40) discount = Math.min(baseDiscount + 9, 28);
+    else if (quantity >= 30) discount = Math.min(baseDiscount + 7, 25);
+    else if (quantity >= 20) discount = Math.min(baseDiscount + 5, 22);
+
+    const discountedPrice = totalOriginalPrice * (1 - discount / 100);
+
+    return {
+      id: `${productId}-pack-${quantity}`,
+      label: `${quantity} Tablets (${stripCount} Strip${stripCount > 1 ? "s" : ""})`,
+      quantity,
+      stripCount,
+      price: Math.round(discountedPrice * 100) / 100,
+      originalPrice: Math.round(totalOriginalPrice * 100) / 100,
+      discount,
+      inStock: true,
+    };
+  });
+};
+
+const addPackSizesToProduct = (product: Product): Product => {
+  if (product.packSizes && product.packSizes.length > 0) {
+    return product;
+  }
+
+  const isTabletProduct =
+    product.strength?.includes("mg") ||
+    product.strength?.includes("Tablet") ||
+    product.strength?.includes("Capsule") ||
+    product.category.includes("Medicine") ||
+    product.category.includes("Supplement") ||
+    product.id.startsWith("best-") ||
+    product.id.startsWith("otc-") ||
+    product.id.startsWith("boost-") ||
+    product.id.startsWith("sup-");
+
+  if (isTabletProduct) {
+    const packSizes = generatePackSizes(
+      product.id,
+      product.originalPrice,
+      product.discount,
+    );
+    return {
+      ...product,
+      packSizes,
+      defaultPackSizeId: packSizes[0]?.id,
+    };
+  }
+
+  const packSizes = [
+    {
+      id: `${product.id}-pack-1`,
+      label: `1 Unit`,
+      quantity: 1,
+      price: product.currentPrice,
+      originalPrice: product.originalPrice,
+      discount: product.discount,
+      inStock: true,
+    },
+  ];
+  return {
+    ...product,
+    packSizes,
+    defaultPackSizeId: packSizes[0]?.id,
+  };
+};
 
 export const PRODUCTS_DATA: Product[] = [
   // --- BEST SELLING PRODUCTS ---
@@ -1420,3 +1478,9 @@ export const PRODUCTS_DATA: Product[] = [
     inStock: true,
   },
 ];
+
+// Export products with pack sizes automatically added
+export const PRODUCTS = PRODUCTS_DATA?.map(addPackSizesToProduct);
+
+// Default export
+export default PRODUCTS;

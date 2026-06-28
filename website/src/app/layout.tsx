@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Providers from "../lib/providers/Providers";
+import ToastProvider from "../components/ToastProvider/ToastProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -71,7 +72,11 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-background text-foreground antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+
+          <ToastProvider />
+        </Providers>
 
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-242fdsf2"
