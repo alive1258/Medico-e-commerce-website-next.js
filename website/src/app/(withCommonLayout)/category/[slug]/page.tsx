@@ -12,7 +12,8 @@ import {
 } from "@/src/components/filters";
 
 import CategoryProductCard from "@/src/components/HomePage/ProductShowcase/CategoryProductCard";
-import { Product, PRODUCTS_DATA } from "@/src/utils/data/products";
+import { PRODUCTS_DATA } from "@/src/utils/data/products";
+import { Product } from "@/src/types/product";
 
 export default function CategoryPage() {
   const params = useParams();
