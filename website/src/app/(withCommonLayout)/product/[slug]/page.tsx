@@ -5,7 +5,9 @@ import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { Product, PRODUCTS_DATA } from "@/src/utils/data/products";
+
+import { Product, PackSize } from "@/src/types/product";
+import { PRODUCTS } from "@/src/utils/data/products";
 import {
   ImageGallery,
   ProductDetails,
@@ -18,33 +20,31 @@ export default function ProductDetailPage() {
 
   // Find product by slug
   const product = useMemo(() => {
-    return PRODUCTS_DATA.find((p) => p.slug === slug);
+    return PRODUCTS.find((p) => p.slug === slug);
   }, [slug]);
 
   // Find related products
   const relatedProducts = useMemo(() => {
     if (!product) return [];
-    return PRODUCTS_DATA.filter(
+    return PRODUCTS.filter(
       (p) => p.category === product.category && p.id !== product.id,
     ).slice(0, 4);
   }, [product]);
 
-  // Handle Add to Cart
-  const handleAddToCart = (product: Product, quantity: number) => {
-    console.log(`Added ${quantity} of ${product.name} to cart`);
-    // Your cart logic here
-  };
-
-  // Handle Buy Now
-  const handleBuyNow = (product: Product, quantity: number) => {
-    console.log(`Buying ${quantity} of ${product.name}`);
-    // Your buy now logic here
+  // Handle Buy Now (ProductDetails handles Add to Cart internally)
+  const handleBuyNow = (
+    product: Product,
+    packSize: PackSize,
+    quantity: number,
+  ) => {
+    // ProductDetails already adds to cart, we just need to redirect
+    console.log(`Buying ${quantity} of ${product.name} (${packSize.label})`);
   };
 
   // If product not found
   if (!product) {
     return (
-      <div className="container  py-20 text-center">
+      <div className="container py-20 text-center">
         <div className="max-w-md mx-auto">
           <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
             Product Not Found
@@ -94,11 +94,7 @@ export default function ProductDetailPage() {
           <ImageGallery product={product} />
 
           {/* Product Details */}
-          <ProductDetails
-            product={product}
-            onAddToCart={handleAddToCart}
-            onBuyNow={handleBuyNow}
-          />
+          <ProductDetails product={product} onBuyNow={handleBuyNow} />
         </div>
 
         {/* Related Products */}
