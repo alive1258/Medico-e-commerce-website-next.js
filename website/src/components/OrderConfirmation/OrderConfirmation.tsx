@@ -71,7 +71,6 @@ export default function OrderConfirmationPage() {
         setLoading(false);
       } catch (error) {
         console.error("Error parsing order data:", error);
-        router.push("/");
       }
     } else {
       // If no order data, redirect to home

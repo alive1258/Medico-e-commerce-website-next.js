@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/checkout/page.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -161,15 +161,15 @@ export default function ProductCheckout() {
   );
 
   // Redirect if cart is empty
-  useEffect(() => {
-    if (cartItems.length === 0) {
-      toast.warning("Your cart is empty. Please add some items first!", {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
-      router.push("/");
-    }
-  }, [cartItems.length, router]);
+  // useEffect(() => {
+  //   if (cartItems.length === 0) {
+  //     toast.warning("Your cart is empty. Please add some items first!", {
+  //       position: "bottom-right",
+  //       autoClose: 3000,
+  //     });
+  //     router.push("/");
+  //   }
+  // }, [cartItems.length, router]);
 
   // State
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -296,7 +296,7 @@ export default function ProductCheckout() {
       dispatch(CLEAR_CART());
 
       toast.success(
-        "🎉 Order placed successfully! Thank you for shopping with us.",
+        " Order placed successfully! Thank you for shopping with us.",
         {
           position: "bottom-right",
           autoClose: 3000,
