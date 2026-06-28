@@ -4,6 +4,12 @@ A modern, scalable, and production-ready pharmacy e-commerce platform built with
 
 ---
 
+## 🚀 Live Demo
+
+🔗 **Website:** https://medico-e-commerce-website-next-js-f.vercel.app/
+
+---
+
 ## 📌 Overview
 
 Medico is a full-stack pharmacy management and e-commerce system designed using modern software architecture and industry best practices. The platform provides secure authentication, role-based authorization, product management, inventory tracking, shopping cart, order processing, payment management, prescription uploads, and an admin dashboard.
