@@ -19,15 +19,7 @@ import Link from "next/link";
 import { sidebarToggle } from "@/src/redux/features/sidebarSlice";
 import CartSidebar from "./CartSidebar";
 import { useGetAllProductCategoriesQuery } from "@/src/redux/api/productCategoriesApi";
-
-const slugify = (text: string) => {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .trim();
-};
+import { slugify } from "@/src/utils/slugify";
 
 export default function Navbar() {
   const dispatch = useDispatch();
