@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/Navbar.tsx (Updated floating cart button section)
 "use client";
 
 import { useRef, useState } from "react";
@@ -19,34 +18,25 @@ import {
 import Link from "next/link";
 import { sidebarToggle } from "@/src/redux/features/sidebarSlice";
 import CartSidebar from "./CartSidebar";
+import { useGetAllProductCategoriesQuery } from "@/src/redux/api/productCategoriesApi";
 
-export const MEDICO_MEDICINE_CATEGORIES = [
-  { id: "home", nameEn: "Home" },
-  { id: "medicine", nameEn: "Medicine" },
-  { id: "healthcare", nameEn: "Healthcare" },
-  { id: "beauty", nameEn: "Beauty" },
-  { id: "sexual-wellness", nameEn: "Sexual Wellness" },
-  { id: "baby-mom-care", nameEn: "Baby & Mom Care" },
-  { id: "herbal", nameEn: "Herbal" },
-  { id: "home-care", nameEn: "Home Care" },
-  { id: "supplement", nameEn: "Supplement" },
-  { id: "food-nutrition", nameEn: "Food and Nutrition" },
-  { id: "pet-care", nameEn: "Pet Care" },
-  { id: "veterinary", nameEn: "Veterinary" },
-  { id: "homeopathy", nameEn: "Homeopathy" },
-  { id: "browse-health-concern", nameEn: "Browse by Health Concern" },
-  { id: "vital-organs", nameEn: "Vital Organs" },
-  { id: "life-style-package", nameEn: "Life Style Package" },
-  { id: "checkups-women", nameEn: "Checkups for Women" },
-  { id: "checkups-men", nameEn: "Checkups for Men" },
-];
+const slugify = (text: string) => {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .trim();
+};
 
 export default function Navbar() {
   const dispatch = useDispatch();
-
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
 
-  // Calculate unique product count (different pack sizes count as different products)
+  const { data, isLoading } = useGetAllProductCategoriesQuery(undefined);
+  const filteredData = data?.data || [];
+
+  // Calculate unique product count
   const uniqueProductCount = cartItems.length;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -157,7 +147,7 @@ export default function Navbar() {
 
         {/* ==================== CATEGORY SCROLLER ==================== */}
         <div className="w-full bg-slate-50 border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 relative flex items-center group">
+          <div className="max-w-6xl mx-auto px-4 relative flex items-center group">
             <button
               onClick={() => scroll("left")}
               className="absolute cursor-pointer left-2 z-10 p-1 bg-white hover:bg-slate-100 hover:text-emerald-600 text-slate-500 rounded-full shadow-md border border-slate-200 transition-all active:scale-95 hidden md:block"
@@ -169,27 +159,34 @@ export default function Navbar() {
               ref={scrollRef}
               className="w-full flex items-center overflow-x-auto no-scrollbar scroll-smooth gap-1 h-11 px-8"
             >
-              {MEDICO_MEDICINE_CATEGORIES.map((cat) => {
-                const targetPath =
-                  cat.id === "home" ? "/" : `/category/${cat.id}`;
-                const isActive = pathname === targetPath;
+              {isLoading ? (
+                <span className="text-xs text-slate-400 font-semibold animate-pulse">
+                  Loading categories...
+                </span>
+              ) : (
+                filteredData?.map((cat: any) => {
+                  const slug = slugify(cat?.name);
+                  const targetPath =
+                    slug === "home" ? "/" : `/category/${slug}`;
+                  const isActive = pathname === targetPath;
 
-                return (
-                  <Link
-                    key={cat.id}
-                    href={targetPath}
-                    ref={isActive ? activeRef : null}
-                    className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
-                      ${
-                        isActive
-                          ? "text-emerald-600 bg-emerald-50 shadow-sm border border-emerald-100/80"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
-                      }`}
-                  >
-                    {cat.nameEn}
-                  </Link>
-                );
-              })}
+                  return (
+                    <Link
+                      key={cat.id}
+                      href={targetPath}
+                      ref={isActive ? activeRef : null}
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
+                        ${
+                          isActive
+                            ? "text-emerald-600 "
+                            : "text-slate-600 hover:text-emerald-600"
+                        }`}
+                    >
+                      {cat?.name}
+                    </Link>
+                  );
+                })
+              )}
             </div>
 
             <button
@@ -212,7 +209,6 @@ export default function Navbar() {
             size={22}
             className="group-hover:scale-110 transition-transform"
           />
-          {/* Show unique product count, not total quantity */}
           {uniqueProductCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center animate-bounce">
               {uniqueProductCount}
@@ -279,20 +275,26 @@ export default function Navbar() {
             <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider px-4 mb-1">
               Product Categories
             </p>
-            {MEDICO_MEDICINE_CATEGORIES.map((cat) => {
-              const targetPath =
-                cat.id === "home" ? "/" : `/category/${cat.id}`;
-              return (
-                <Link
-                  key={cat.id}
-                  href={targetPath}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
-                >
-                  {cat.nameEn}
-                </Link>
-              );
-            })}
+            {isLoading ? (
+              <span className="text-xs text-slate-400 px-4 py-2 animate-pulse">
+                Loading...
+              </span>
+            ) : (
+              filteredData?.map((cat: any) => {
+                const slug = slugify(cat?.name);
+                const targetPath = slug === "home" ? "/" : `/category/${slug}`;
+                return (
+                  <Link
+                    key={cat.id}
+                    href={targetPath}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                  >
+                    {cat?.name}
+                  </Link>
+                );
+              })
+            )}
           </nav>
         </div>
       </div>
