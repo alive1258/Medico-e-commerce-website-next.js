@@ -151,34 +151,27 @@ export default function Navbar() {
               ref={scrollRef}
               className="w-full flex items-center overflow-x-auto no-scrollbar scroll-smooth gap-1 h-11 px-8"
             >
-              {isLoading ? (
-                <span className="text-xs text-slate-400 font-semibold animate-pulse">
-                  Loading categories...
-                </span>
-              ) : (
-                filteredData?.map((cat: any) => {
-                  const slug = slugify(cat?.name);
-                  const targetPath =
-                    slug === "home" ? "/" : `/category/${slug}`;
-                  const isActive = pathname === targetPath;
+              {filteredData?.map((cat: any) => {
+                const slug = slugify(cat?.name);
+                const targetPath = slug === "home" ? "/" : `/category/${slug}`;
+                const isActive = pathname === targetPath;
 
-                  return (
-                    <Link
-                      key={cat.id}
-                      href={targetPath}
-                      ref={isActive ? activeRef : null}
-                      className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
+                return (
+                  <Link
+                    key={cat.id}
+                    href={targetPath}
+                    ref={isActive ? activeRef : null}
+                    className={`whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide uppercase transition-all
                         ${
                           isActive
                             ? "text-emerald-600 "
                             : "text-slate-600 hover:text-emerald-600"
                         }`}
-                    >
-                      {cat?.name}
-                    </Link>
-                  );
-                })
-              )}
+                  >
+                    {cat?.name}
+                  </Link>
+                );
+              })}
             </div>
 
             <button
@@ -267,26 +260,20 @@ export default function Navbar() {
             <p className="text-[10px] uppercase font-black text-slate-400 tracking-wider px-4 mb-1">
               Product Categories
             </p>
-            {isLoading ? (
-              <span className="text-xs text-slate-400 px-4 py-2 animate-pulse">
-                Loading...
-              </span>
-            ) : (
-              filteredData?.map((cat: any) => {
-                const slug = slugify(cat?.name);
-                const targetPath = slug === "home" ? "/" : `/category/${slug}`;
-                return (
-                  <Link
-                    key={cat.id}
-                    href={targetPath}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
-                  >
-                    {cat?.name}
-                  </Link>
-                );
-              })
-            )}
+            {filteredData?.map((cat: any) => {
+              const slug = slugify(cat?.name);
+              const targetPath = slug === "home" ? "/" : `/category/${slug}`;
+              return (
+                <Link
+                  key={cat.id}
+                  href={targetPath}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                >
+                  {cat?.name}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>

@@ -47,18 +47,6 @@ export interface IApiResponse<T> {
 
 export const productCategoryApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    createProductCategory: build.mutation<
-      IApiResponse<IProductCategory>,
-      Partial<IProductCategory>
-    >({
-      query: (data) => ({
-        url: `${PRODUCT_CATEGORY_URL}`,
-        method: "POST",
-        data,
-      }),
-      invalidatesTags: [tagTypes.product_categories],
-    }),
-
     getAllProductCategories: build.query<
       IApiResponse<IProductCategory[]>,
       Record<string, unknown> | undefined
@@ -70,47 +58,7 @@ export const productCategoryApi = baseApi.injectEndpoints({
       }),
       providesTags: [tagTypes.product_categories],
     }),
-
-    getSingleProductCategory: build.query<
-      IApiResponse<IProductCategory>,
-      string
-    >({
-      query: (id) => ({
-        url: `${PRODUCT_CATEGORY_URL}/${id}`,
-        method: "GET",
-      }),
-      providesTags: [tagTypes.product_categories],
-    }),
-
-    updateProductCategory: build.mutation<
-      IApiResponse<IProductCategory>,
-      { id: string; data: Partial<IProductCategory> }
-    >({
-      query: ({ id, data }) => ({
-        url: `${PRODUCT_CATEGORY_URL}/${id}`,
-        method: "PATCH",
-        data,
-      }),
-      invalidatesTags: [tagTypes.product_categories],
-    }),
-
-    deleteProductCategory: build.mutation<
-      IApiResponse<IProductCategory>,
-      string
-    >({
-      query: (id) => ({
-        url: `${PRODUCT_CATEGORY_URL}/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: [tagTypes.product_categories],
-    }),
   }),
 });
 
-export const {
-  useCreateProductCategoryMutation,
-  useGetAllProductCategoriesQuery,
-  useGetSingleProductCategoryQuery,
-  useUpdateProductCategoryMutation,
-  useDeleteProductCategoryMutation,
-} = productCategoryApi;
+export const { useGetAllProductCategoriesQuery } = productCategoryApi;

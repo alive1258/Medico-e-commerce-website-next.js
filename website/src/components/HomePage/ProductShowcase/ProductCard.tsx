@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use client";
 
 import React, { useState } from "react";
@@ -9,32 +8,60 @@ import { useDispatch, useSelector } from "react-redux";
 import { Star, Plus, Check, Minus } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { PackSize, Product } from "@/src/types/product";
 import { ADD_TO_CART, REMOVE_FROM_CART } from "@/src/redux/features/cartSlice";
 
 interface ProductCardProps {
-  product: Product;
+  product: any;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
 
-  const [selectedPack, setSelectedPack] = useState<PackSize>(
-    product.packSizes?.find((p) => p.id === product.defaultPackSizeId) ||
-      product.packSizes?.[0] || {
+  // ✅ API থেকে আসা ডেটা ম্যাপিং - শুধু ফিল্ড নাম ঠিক করা
+  const image =
+    product.thumbnail ||
+    product.imageUrl ||
+    product.image ||
+    "/placeholder.png";
+
+  // ✅ variants থেকে প্রথম বা সস্তা ভেরিয়েন্ট নেওয়া
+  const variants = product?.variants || [];
+  const sortedVariants = [...variants].sort(
+    (a: any, b: any) => a.price - b.price,
+  );
+  const cheapestVariant = sortedVariants[0] || null;
+
+  // ✅ ডিফল্ট প্যাক সেট করা
+  const defaultPack = cheapestVariant
+    ? {
+        id: cheapestVariant.id || "default",
+        label: cheapestVariant.pack_size || "1 Unit",
+        quantity: 1,
+        price: cheapestVariant.discount_price || cheapestVariant.price || 0,
+        originalPrice: cheapestVariant.price || 0,
+        discount: cheapestVariant.discount_price
+          ? Math.round(
+              ((cheapestVariant.price - cheapestVariant.discount_price) /
+                cheapestVariant.price) *
+                100,
+            )
+          : 0,
+        inStock: cheapestVariant.stock > 0,
+      }
+    : {
         id: "default",
         label: "1 Unit",
         quantity: 1,
-        price: product.currentPrice,
-        originalPrice: product.originalPrice,
-        discount: product.discount,
+        price: 0,
+        originalPrice: 0,
+        discount: 0,
         inStock: true,
-      },
-  );
+      };
+
+  const [selectedPack, setSelectedPack] = useState(defaultPack);
   const [isAdded, setIsAdded] = useState(false);
 
-  // Check if this specific pack size is already in cart
   const getCartItemQuantity = () => {
     const existingItem = cartItems.find(
       (item: any) =>
@@ -58,15 +85,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       quantity: 1,
       packSizeId: selectedPack.id,
       packSizeLabel: selectedPack.label,
-      image: product.imageUrl,
+      image,
       maxQuantity: 99,
-      discount: selectedPack.discount || product.discount,
-      originalPrice: selectedPack.originalPrice || product.originalPrice,
+      discount: selectedPack.discount,
+      originalPrice: selectedPack.originalPrice,
     };
 
     dispatch(ADD_TO_CART(cartItem));
 
-    // Show success toast
     toast.success(`✅ ${product.name} added to cart!`, {
       position: "bottom-right",
       autoClose: 3000,
@@ -74,11 +100,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       closeOnClick: true,
       pauseOnHover: true,
       draggable: true,
-      progress: undefined,
       theme: "light",
     });
 
-    // Show success feedback
     setIsAdded(true);
     setTimeout(() => setIsAdded(false), 2000);
   };
@@ -88,7 +112,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.stopPropagation();
     dispatch(REMOVE_FROM_CART({ id: product.id, packSizeId: selectedPack.id }));
 
-    // Show removal toast
     toast.info(`🛒 Removed 1 ${product.name} from cart`, {
       position: "bottom-right",
       autoClose: 2000,
@@ -101,19 +124,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   };
 
   const handlePackChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const pack = product.packSizes?.find((p) => p.id === e.target.value);
-    if (pack) {
-      setSelectedPack(pack);
+    const variant = variants.find((v: any) => v.id === e.target.value);
+    if (variant) {
+      setSelectedPack({
+        id: variant.id,
+        label: variant.pack_size,
+        quantity: 1,
+        price: variant.discount_price || variant.price,
+        originalPrice: variant.price,
+        discount: variant.discount_price
+          ? Math.round(
+              ((variant.price - variant.discount_price) / variant.price) * 100,
+            )
+          : 0,
+        inStock: variant.stock > 0,
+      });
     }
   };
 
+  // ✅ variants কে packSizes ফরম্যাটে কনভার্ট করা (ডিজাইন না বদলাতে)
+  const packSizes = variants.map((v: any) => ({
+    id: v.id,
+    label: v.pack_size,
+    price: v.discount_price || v.price,
+    originalPrice: v.price,
+    discount: v.discount_price
+      ? Math.round(((v.price - v.discount_price) / v.price) * 100)
+      : 0,
+    inStock: v.stock > 0,
+  }));
+
   return (
     <div className="shrink-0 w-47.5 sm:w-55 bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 flex flex-col group/card relative">
-      {/* Discount Badge */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start">
-        <span className="bg-red-500 text-white font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">
-          {selectedPack.discount || product.discount}% OFF
-        </span>
+        {(selectedPack.discount || 0) > 0 && (
+          <span className="bg-red-500 text-white font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">
+            {selectedPack.discount}% OFF
+          </span>
+        )}
         {isInCart && (
           <span className="bg-emerald-500 text-white font-extrabold text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-md shadow-sm">
             {cartQuantity} in Cart
@@ -121,13 +169,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         )}
       </div>
 
-      {/* Product Image */}
       <Link
         href={`/product/${product.slug}`}
         className="relative aspect-square w-full bg-slate-50 overflow-hidden block"
       >
         <Image
-          src={product.imageUrl}
+          src={image}
           alt={product.name}
           className="object-cover transition-transform duration-500 will-change-transform group-hover/card:scale-105"
           loading="lazy"
@@ -137,7 +184,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         />
       </Link>
 
-      {/* Product Info */}
       <div className="p-3.5 flex-1 flex flex-col justify-between">
         <div className="space-y-1">
           <Link href={`/product/${product.slug}`}>
@@ -147,7 +193,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Link>
         </div>
 
-        {/* Rating Stars */}
         {product.rating !== undefined && (
           <div className="flex items-center gap-1 py-1">
             <div className="flex items-center text-amber-400">
@@ -174,49 +219,44 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         )}
 
-        {/* Pack Size Selector */}
-        {product.packSizes && product.packSizes.length > 1 && (
-          <div className="">
-            <select
-              value={selectedPack.id}
-              onChange={handlePackChange}
-              className="w-full text-[10px] font-semibold border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {product.packSizes.map((pack) => {
-                const inCart = cartItems.some(
-                  (item: any) =>
-                    item.id === product.id && item.packSizeId === pack.id,
-                );
-                return (
-                  <option key={pack.id} value={pack.id}>
-                    {pack.label} - ৳{pack.price.toFixed(2)}
-                    {inCart ? " ✓" : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+        {packSizes.length > 1 && (
+          <select
+            value={selectedPack.id}
+            onChange={handlePackChange}
+            className="w-full text-[10px] font-semibold border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {packSizes.map((pack: any) => {
+              const inCart = cartItems.some(
+                (item: any) =>
+                  item.id === product.id && item.packSizeId === pack.id,
+              );
+              return (
+                <option key={pack.id} value={pack.id}>
+                  {pack.label} - ৳{pack.price.toFixed(2)}
+                  {inCart ? " ✓" : ""}
+                </option>
+              );
+            })}
+          </select>
         )}
 
-        {/* Pricing and Add/Remove Button */}
-        <div className="pt-3 border-t border-slate-50 flex items-center justify-between gap-1 mt-2">
+        <div className="pt-3  flex items-center justify-between gap-1 mt-2">
           <Link
             href={`/product/${product.slug}`}
             className="flex flex-col hover:opacity-80 transition-opacity"
           >
-            <span className="text-[10px] text-slate-400 line-through">
-              ৳{" "}
-              {selectedPack.originalPrice?.toFixed(2) ||
-                product.originalPrice.toFixed(2)}
-            </span>
+            {(selectedPack.originalPrice || 0) > selectedPack.price && (
+              <span className="text-[10px] text-slate-400 line-through">
+                ৳ {(selectedPack.originalPrice ?? 0).toFixed(2)}
+              </span>
+            )}
             <span className="text-xs sm:text-sm font-extrabold text-emerald-600">
               ৳ {selectedPack.price.toFixed(2)}
             </span>
           </Link>
 
           {isInCart ? (
-            // Show quantity controls if item is in cart
             <div className="flex items-center gap-1 bg-emerald-50 rounded-xl border border-emerald-200 px-1.5 py-0.5">
               <button
                 onClick={handleRemoveFromCart}
@@ -237,7 +277,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               </button>
             </div>
           ) : (
-            // Show ADD button if not in cart
             <button
               onClick={handleAddToCart}
               className={`font-black text-xs px-2.5 py-1.5 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1 uppercase tracking-wider hover:shadow-md ${
@@ -248,13 +287,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             >
               {isAdded ? (
                 <>
-                  <Check size={12} className="stroke-3" />
-                  ADDED
+                  <Check size={12} className="stroke-3" /> ADDED
                 </>
               ) : (
                 <>
-                  <Plus size={12} className="stroke-3" />
-                  ADD
+                  <Plus size={12} className="stroke-3" /> ADD
                 </>
               )}
             </button>

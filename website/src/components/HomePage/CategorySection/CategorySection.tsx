@@ -45,14 +45,14 @@ export default function CategorySection({
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="p-2 md:p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="p-2 md:p-2.5 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             aria-label="Scroll left categories"
           >
             <ChevronLeft className="w-5 h-5 stroke-[2.5]" />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="p-2 md:p-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+            className="p-2 md:p-2.5 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             aria-label="Scroll right categories"
           >
             <ChevronRight className="w-5 h-5 stroke-[2.5]" />

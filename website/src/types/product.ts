@@ -10,26 +10,45 @@ export interface PackSize {
   inStock?: boolean;
 }
 
+// types/product.ts
+export interface ProductVariant {
+  id: string;
+  strength: string;
+  pack_size: string;
+  sku: string;
+  price: number;
+  discount_price?: number;
+  stock: number;
+  weight?: number;
+  expiry_date?: string;
+  is_active: boolean;
+}
+
 export interface Product {
   id: string;
-  slug: string;
   name: string;
-  strength?: string;
-  brand: string;
-  originalPrice: number;
-  currentPrice: number;
-  discount: number;
-  deliveryTime?: string;
-  category: string;
-  imageUrl: string;
-  rating?: number;
-  reviewsCount?: number;
-  inStock?: boolean;
-  description?: string;
-  images?: string[];
-  specifications?: Record<string, string>;
-  benefits?: string[];
-  usage?: string;
-  packSizes?: PackSize[];
-  defaultPackSizeId?: string;
+  slug: string;
+  thumbnail?: string;
+  manufacturer?: string;
+  is_prescription_required: boolean;
+  is_active: boolean;
+  category?: {
+    id: string;
+    name: string;
+  };
+  brand?: {
+    id: string;
+    name: string;
+  };
+  variants: ProductVariant[];
+  price_range: {
+    min: number;
+    max: number;
+  };
+  discount_range?: {
+    min: number;
+    max: number;
+  };
+  created_at: string;
+  updated_at: string;
 }

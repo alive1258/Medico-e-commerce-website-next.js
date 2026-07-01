@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// components/ProductShowcase.tsx
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -12,33 +11,47 @@ import {
 import Link from "next/link";
 import { useSelector } from "react-redux";
 import ProductCard from "./ProductCard";
-import PRODUCTS from "@/src/utils/data/products";
 
-export default function ProductShowcase() {
-  const categoriesList = [
-    "Best Selling Products",
-    "Newly Launched Items",
-    "Breathe & Relieve",
-    "Protect Your Health🩺",
-    "Boost & Balance 💊",
-    "OTC Medicine",
-    "Supplement Festival",
-    "All-in-One Care Deals",
-  ];
-
+export default function ProductShowcase({ products }: { products: any[] }) {
   const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const cartCount = useSelector((state: any) => state?.cart?.totalQuantity);
+
+  // ✅ ডায়নামিক ক্যাটাগরি লিস্ট - প্রোডাক্ট থেকে অটো জেনারেট
+  const categoriesList = useMemo(() => {
+    if (!products || products.length === 0) return [];
+
+    const categories = new Set<string>();
+    products.forEach((p) => {
+      // category অবজেক্ট থেকে নাম নেওয়া
+      if (p.category?.name) {
+        categories.add(p.category.name);
+      }
+    });
+
+    return Array.from(categories);
+  }, [products]);
 
   const handleScroll = (categoryName: string, direction: "left" | "right") => {
     const container = scrollRefs.current[categoryName];
     if (container) {
-      const scrollAmount = 300;
       container.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
+        left: direction === "left" ? -300 : 300,
         behavior: "smooth",
       });
     }
   };
+
+  console.log(products, "products");
+
+  if (!products || products.length === 0) {
+    return (
+      <section className="bg-slate-50 min-h-screen py-10 font-sans">
+        <div className="container text-center text-slate-400 font-semibold py-20">
+          No products available right now.
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-slate-50 min-h-screen py-10 font-sans">
@@ -65,7 +78,7 @@ export default function ProductShowcase() {
               Cart Items:
             </span>
             <span className="bg-red-500 text-white font-extrabold text-sm px-2.5 py-0.5 rounded-full animate-bounce">
-              {cartCount}
+              {cartCount ?? 0}
             </span>
           </div>
         </div>
@@ -73,8 +86,9 @@ export default function ProductShowcase() {
         {/* Dynamic Category Carousels */}
         <div className="space-y-12">
           {categoriesList.map((category) => {
-            const filteredProducts = PRODUCTS.filter(
-              (p) => p.category === category,
+            // ✅ সঠিকভাবে ফিল্টার করা - category.name দিয়ে
+            const filteredProducts = products.filter(
+              (p) => p.category?.name === category,
             );
 
             if (filteredProducts.length === 0) return null;
@@ -85,17 +99,16 @@ export default function ProductShowcase() {
                 className="md:bg-white p-0.5 md:p-5 md:rounded-2xl md:shadow-sm md:border md:border-slate-100 relative group"
               >
                 {/* Category Header */}
-                <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-50">
+                <div className="flex items-center justify-between mb-6  ">
                   <div className="space-y-1">
                     <h3 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-2">
                       {category}
                     </h3>
                     <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
-                      Genuine Wellness Essentials
+                      {filteredProducts.length} Products Available
                     </p>
                   </div>
 
-                  {/* Navigation Controls */}
                   <div className="md:flex items-center gap-3">
                     <Link
                       href={`/category/${category.replace(/\s+/g, "-").toLowerCase()}`}
@@ -130,10 +143,7 @@ export default function ProductShowcase() {
                     scrollRefs.current[category] = el;
                   }}
                   className="flex items-stretch gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-4"
-                  style={{
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                  }}
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
                   {filteredProducts.map((product) => (
                     <ProductCard key={product.id} product={product} />
