@@ -16,13 +16,11 @@ export default function ProductShowcase({ products }: { products: any[] }) {
   const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const cartCount = useSelector((state: any) => state?.cart?.totalQuantity);
 
-  // ✅ ডায়নামিক ক্যাটাগরি লিস্ট - প্রোডাক্ট থেকে অটো জেনারেট
   const categoriesList = useMemo(() => {
     if (!products || products.length === 0) return [];
 
     const categories = new Set<string>();
     products.forEach((p) => {
-      // category অবজেক্ট থেকে নাম নেওয়া
       if (p.category?.name) {
         categories.add(p.category.name);
       }
@@ -86,8 +84,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
         {/* Dynamic Category Carousels */}
         <div className="space-y-12">
           {categoriesList.map((category) => {
-            // ✅ সঠিকভাবে ফিল্টার করা - category.name দিয়ে
-            const filteredProducts = products.filter(
+            const filteredProducts = products?.filter(
               (p) => p.category?.name === category,
             );
 
@@ -104,9 +101,9 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                     <h3 className="text-lg md:text-xl font-black text-slate-900 flex items-center gap-2">
                       {category}
                     </h3>
-                    <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                    {/* <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
                       {filteredProducts.length} Products Available
-                    </p>
+                    </p> */}
                   </div>
 
                   <div className="md:flex items-center gap-3">
@@ -120,7 +117,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                     <div className="md:flex hidden items-center gap-1.5">
                       <button
                         onClick={() => handleScroll(category, "left")}
-                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                        className="p-2 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                         aria-label={`Scroll Left in ${category}`}
                       >
                         <ChevronLeft size={18} className="stroke-[2.5]" />
@@ -128,7 +125,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
 
                       <button
                         onClick={() => handleScroll(category, "right")}
-                        className="p-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+                        className="p-2 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                         aria-label={`Scroll Right in ${category}`}
                       >
                         <ChevronRight size={18} className="stroke-[2.5]" />
@@ -145,7 +142,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                   className="flex items-stretch gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-4"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 >
-                  {filteredProducts.map((product) => (
+                  {filteredProducts?.map((product) => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>

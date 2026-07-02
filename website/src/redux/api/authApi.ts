@@ -13,7 +13,7 @@ import { baseApi } from "./baseApi";
 
 const AUTH_URL = "/auth";
 
-const authApi = baseApi.injectEndpoints({
+export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ✅ LOGIN
     login: builder.mutation<LoginResponse, SignInRequest>({
@@ -84,7 +84,7 @@ const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.auth],
     }),
-
+    // ✅ GET MY PROFILE
     getMyProfile: builder.query<UserProfileResponse, void>({
       query: () => ({
         url: `${AUTH_URL}/get-me`,
@@ -95,6 +95,7 @@ const authApi = baseApi.injectEndpoints({
   }),
 });
 
+// Export hooks
 export const {
   useLoginMutation,
   useSignOutMutation,

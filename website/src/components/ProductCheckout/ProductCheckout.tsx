@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/purity */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,7 @@ import {
   Trash2,
   Plus,
   Minus,
+  AlertCircle,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -34,6 +35,7 @@ import {
   REMOVE_FROM_CART,
   UPDATE_QUANTITY,
 } from "@/src/redux/features/cartSlice";
+import { useCreateOrderMutation } from "@/src/redux/api/orderApi";
 
 // Types
 interface CartItem {
@@ -47,6 +49,7 @@ interface CartItem {
   image?: string;
   discount?: number;
   originalPrice?: number;
+  sku?: string;
 }
 
 interface CheckoutFormData {
@@ -57,18 +60,8 @@ interface CheckoutFormData {
   optionalNote: string;
   deliveryMethod: "inside-dhaka" | "outside-dhaka";
   paymentMethod: "cod" | "online";
+  addressId?: string;
 }
-
-// Generate order ID
-const generateOrderId = () => {
-  const date = new Date();
-  const dateStr =
-    date.getFullYear() +
-    String(date.getMonth() + 1).padStart(2, "0") +
-    String(date.getDate()).padStart(2, "0");
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  return `ORD-${dateStr}-${random}`;
-};
 
 // Components
 const DeliveryMethodCard: React.FC<{
@@ -160,16 +153,8 @@ export default function ProductCheckout() {
     (state: any) => state?.cart?.totalQuantity || 0,
   );
 
-  // Redirect if cart is empty
-  // useEffect(() => {
-  //   if (cartItems.length === 0) {
-  //     toast.warning("Your cart is empty. Please add some items first!", {
-  //       position: "bottom-right",
-  //       autoClose: 3000,
-  //     });
-  //     router.push("/");
-  //   }
-  // }, [cartItems.length, router]);
+  // RTK Query mutation hook
+  const [createOrder, { isLoading: isOrderPlacing }] = useCreateOrderMutation();
 
   // State
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -180,20 +165,23 @@ export default function ProductCheckout() {
     optionalNote: "",
     deliveryMethod: "inside-dhaka",
     paymentMethod: "cod",
+    addressId: "",
   });
 
   const [couponCode, setCouponCode] = useState("");
   const [isCouponApplied, setIsCouponApplied] = useState(false);
-  const [isOrderPlacing, setIsOrderPlacing] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Calculate order summary from real cart data
   const subtotal = cartItems.reduce(
-    (sum: number, item: CartItem) => sum + item.price * item.quantity,
+    (sum: number, item: CartItem) =>
+      sum + (item.price || 0) * (item.quantity || 0),
     0,
   );
 
   const totalDiscount = cartItems.reduce(
-    (sum: number, item: CartItem) => sum + (item.discount || 0) * item.quantity,
+    (sum: number, item: CartItem) =>
+      sum + (item.discount || 0) * (item.quantity || 0),
     0,
   );
 
@@ -206,6 +194,7 @@ export default function ProductCheckout() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setApiError(null);
   };
 
   const handleApplyCoupon = () => {
@@ -254,16 +243,48 @@ export default function ProductCheckout() {
       return;
     }
 
-    setIsOrderPlacing(true);
+    // Validate mobile number
+    if (!/^01[3-9]\d{8}$/.test(formData.mobileNumber)) {
+      toast.error("Please enter a valid Bangladesh mobile number!", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      return;
+    }
+
+    setApiError(null);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Prepare order items
+      const orderItems = cartItems.map((item: CartItem) => ({
+        product_variant_id: item.packSizeId || item.id,
+        product_name: item.name,
+        sku: item.sku || `SKU-${item.id}`,
+        quantity: item.quantity,
+        unit_price: item.price,
+        total_price: item.price * item.quantity,
+      }));
 
-      // Generate order data
-      const orderId = generateOrderId();
+      // Prepare order data
       const orderData = {
-        orderId,
+        address_id: formData.addressId || "temp-address-id",
+        payment_method: formData.paymentMethod === "cod" ? "cod" : "online",
+        delivery_charge: deliveryFee,
+        coupon_code: isCouponApplied ? couponCode : undefined,
+        notes: formData.optionalNote,
+        items: orderItems,
+      };
+
+      console.log("Sending order data:", orderData);
+
+      // Call API using RTK Query mutation
+      const response = await createOrder(orderData).unwrap();
+
+      console.log("Order response:", response);
+
+      // Store order data in sessionStorage for confirmation page
+      const orderConfirmationData = {
+        orderId: response.data.order_number || response.data.id,
         customerName: formData.fullName,
         customerEmail: formData.emailAddress || "N/A",
         customerPhone: formData.mobileNumber,
@@ -287,30 +308,45 @@ export default function ProductCheckout() {
             ? "Inside Dhaka"
             : "Outside Dhaka",
         optionalNote: formData.optionalNote,
+        orderStatus: response.data.order_status || "pending",
+        paymentStatus: response.data.payment_status || "unpaid",
+        estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       };
 
-      // Store order data in sessionStorage for the confirmation page
-      sessionStorage.setItem("orderData", JSON.stringify(orderData));
+      sessionStorage.setItem(
+        "orderData",
+        JSON.stringify(orderConfirmationData),
+      );
 
       // Clear cart after successful order
       dispatch(CLEAR_CART());
 
       toast.success(
-        " Order placed successfully! Thank you for shopping with us.",
+        response.message ||
+          "🎉 Order placed successfully! Thank you for shopping with us.",
         {
           position: "bottom-right",
           autoClose: 3000,
         },
       );
 
-      // Redirect directly to confirmation page
-      router.push("/order-confirmation");
-    } catch (error) {
-      toast.error("Failed to place order. Please try again.", {
+      // Redirect to order confirmation
+      setTimeout(() => {
+        router.push("/order-confirmation");
+      }, 1500);
+    } catch (error: any) {
+      console.error("Order placement error:", error);
+
+      const errorMessage =
+        error?.data?.message ||
+        error?.message ||
+        "Failed to place order. Please try again.";
+      setApiError(errorMessage);
+
+      toast.error(errorMessage, {
         position: "bottom-right",
-        autoClose: 3000,
+        autoClose: 5000,
       });
-      setIsOrderPlacing(false);
     }
   };
 
@@ -355,6 +391,14 @@ export default function ProductCheckout() {
           <h1 className="text-2xl font-extrabold text-slate-900">Checkout</h1>
           <div className="w-24" />
         </div>
+
+        {/* API Error Display */}
+        {apiError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
+            <AlertCircle size={20} />
+            <span className="text-sm font-medium">{apiError}</span>
+          </div>
+        )}
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

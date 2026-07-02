@@ -88,6 +88,16 @@ export default function CartSidebar() {
               <span className="text-xs font-semibold text-emerald-600">
                 {totalQuantity} {totalQuantity === 1 ? "Item" : "Items"} Total
               </span>
+              {/* Clear All Button */}
+              {cartItems.length > 1 && (
+                <button
+                  onClick={handleClearCart}
+                  className="text-xs text-red-500 cursor-pointer font-bold hover:text-red-600 transition-colors flex items-center gap-1"
+                >
+                  <Trash2 size={12} />
+                  Clear All Items
+                </button>
+              )}
             </div>
           </div>
           <button
@@ -139,7 +149,7 @@ export default function CartSidebar() {
                         onClick={() =>
                           handleRemoveFromCart(item.id, item.packSizeId)
                         }
-                        className="p-1 rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
+                        className="p-1 cursor-pointer rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
                         aria-label="Decrease quantity"
                       >
                         <Minus size={14} />
@@ -149,7 +159,7 @@ export default function CartSidebar() {
                       </span>
                       <button
                         onClick={() => handleAddToCart(item)}
-                        className="p-1 rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
+                        className="p-1 cursor-pointer rounded-lg hover:bg-slate-200 transition-colors text-slate-500"
                         aria-label="Increase quantity"
                       >
                         <Plus size={14} />
@@ -158,7 +168,7 @@ export default function CartSidebar() {
                         onClick={() =>
                           handleDeleteItem(item.id, item.packSizeId)
                         }
-                        className="p-1 rounded-lg hover:bg-red-100 transition-colors text-red-500 ml-2"
+                        className="p-1 cursor-pointer rounded-lg hover:bg-red-100 transition-colors text-red-500 ml-2"
                         aria-label="Remove item"
                       >
                         <Trash2 size={14} />
@@ -177,17 +187,6 @@ export default function CartSidebar() {
                   </div>
                 </div>
               ))}
-
-              {/* Clear All Button */}
-              {cartItems.length > 1 && (
-                <button
-                  onClick={handleClearCart}
-                  className="text-xs text-red-500 font-bold hover:text-red-600 transition-colors flex items-center gap-1"
-                >
-                  <Trash2 size={12} />
-                  Clear All Items
-                </button>
-              )}
             </>
           ) : (
             // Empty Cart State
@@ -226,12 +225,12 @@ export default function CartSidebar() {
           )}
 
           {/* Delivery Info */}
-          {cartItems && cartItems.length > 0 && (
+          {/* {cartItems && cartItems.length > 0 && (
             <div className="flex justify-between items-center text-xs text-slate-400">
               <span>Delivery Charge:</span>
               <span className="font-semibold text-emerald-600">Free</span>
             </div>
-          )}
+          )} */}
 
           {/* Checkout Button */}
           <Link

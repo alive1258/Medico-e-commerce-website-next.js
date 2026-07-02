@@ -4,6 +4,7 @@ export const tagTypes: Record<string, string> = {
   divisions: "divisions",
   districts: "districts",
   upzelas: "upzelas",
+  orders: "orders",
   product_categories: "product-categories",
 };
 
@@ -13,5 +14,6 @@ export const tagTypesList: string[] = [
   tagTypes.divisions,
   tagTypes.districts,
   tagTypes.upzelas,
+  tagTypes.orders,
   tagTypes.product_categories,
 ];

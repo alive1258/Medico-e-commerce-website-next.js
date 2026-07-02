@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import {
   Search,
@@ -20,12 +20,36 @@ import { sidebarToggle } from "@/src/redux/features/sidebarSlice";
 import CartSidebar from "./CartSidebar";
 import { useGetAllProductCategoriesQuery } from "@/src/redux/api/productCategoriesApi";
 import { slugify } from "@/src/utils/slugify";
+import {
+  authApi,
+  useGetMyProfileQuery,
+  useSignOutMutation,
+} from "@/src/redux/api/authApi";
+import { logout, storeUser } from "@/src/redux/features/auth/authSlice";
+import { toast } from "react-toastify";
+import { ApiError } from "@/src/types/authType";
+
+interface RootState {
+  auth: {
+    user: {
+      email: string;
+      role: string;
+    } | null;
+  };
+}
 
 export default function Navbar() {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const { data, isLoading } = useGetAllProductCategoriesQuery(undefined);
+  const router = useRouter();
+
+  const { user: userData } = useSelector((state: RootState) => state.auth);
+  const { data: myInfo } = useGetMyProfileQuery();
+  const [signOut, { isLoading: isLoggingOut }] = useSignOutMutation();
+
+  const { data } = useGetAllProductCategoriesQuery(undefined);
   const filteredData = data?.data || [];
 
   // Calculate unique product count
@@ -39,6 +63,32 @@ export default function Navbar() {
 
   const wishlistCount = 0;
 
+  const user = myInfo?.data?.user;
+  const isLoggedIn = !!(userData || user);
+
+  // Sync user to redux
+  useEffect(() => {
+    if (user && !userData) {
+      dispatch(storeUser({ email: user.email, role: user.role }));
+    }
+  }, [user, userData, dispatch]);
+
+  const handleLogout = async () => {
+    try {
+      const response = await signOut().unwrap();
+      if (response?.success) {
+        dispatch(logout());
+        dispatch(authApi.util.resetApiState());
+        toast.success("Successfully logged out!");
+        setShowLogoutModal(false);
+        router.push("/");
+      }
+    } catch (err: unknown) {
+      const error = err as ApiError;
+      toast.error(error?.data?.message || "Sign out failed", { theme: "dark" });
+    }
+  };
+
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
       const scrollAmount = 200;
@@ -48,6 +98,7 @@ export default function Navbar() {
       });
     }
   };
+  const isActiveLink = (href: string) => pathname === href;
 
   return (
     <>
@@ -119,13 +170,37 @@ export default function Navbar() {
             </button>
 
             {/* Login */}
-            <Link
-              href="/login"
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-sm font-bold text-slate-700 border border-slate-200"
-            >
-              <User size={16} />
-              <span className="hidden sm:inline">Login</span>
-            </Link>
+
+            <div className="hidden lg:flex items-center space-x-6">
+              {isLoggedIn ? (
+                <>
+                  <Link
+                    href="/dashboard/account"
+                    className={`text-[16px] font-medium transition-colors ${
+                      isActiveLink("/dashboard/account")
+                        ? "text-[#01DC62]"
+                        : "text-gray-300 hover:text-white"
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => setShowLogoutModal(true)}
+                    className="text-[16px] font-medium text-gray-300 hover:text-white transition-colors"
+                  >
+                    Log Out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-sm font-bold text-slate-700 border border-slate-200"
+                >
+                  <User size={16} />
+                  <span className="hidden sm:inline">Login</span>
+                </Link>
+              )}
+            </div>
 
             {/* Hamburger Menu */}
             <button
@@ -280,6 +355,38 @@ export default function Navbar() {
 
       {/* ==================== CART SIDEBAR ==================== */}
       <CartSidebar />
+
+      {/* --- LOGOUT MODAL --- */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+            onClick={() => !isLoggingOut && setShowLogoutModal(false)}
+          />
+          <div className="relative bg-[#0F0A21] border border-[#252528] p-6 lg:p-8 rounded-2xl max-w-sm w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-white mb-2">Sign Out?</h3>
+            <p className="text-gray-400 mb-8 text-sm">
+              Are you sure you want to end your session?
+            </p>
+            <div className="flex gap-3">
+              <button
+                disabled={isLoggingOut}
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-3 rounded-xl border border-[#252528] text-gray-300 hover:bg-white/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isLoggingOut}
+                onClick={handleLogout}
+                className="flex-1 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors disabled:opacity-50"
+              >
+                {isLoggingOut ? "Ending..." : "Logout"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
