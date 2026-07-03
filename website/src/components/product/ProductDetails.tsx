@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
 // components/product/ProductDetails.tsx
+
 "use client";
 
 import React, { useState } from "react";
@@ -19,9 +21,9 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useDispatch, useSelector } from "react-redux";
 
-import { RatingStars } from "./RatingStars";
 import { Product, PackSize } from "@/src/types/product";
 import { ADD_TO_CART, REMOVE_FROM_CART } from "@/src/redux/features/cartSlice";
+import { slugify } from "@/src/utils/slugify";
 
 interface ProductDetailsProps {
   product: Product;
@@ -43,16 +45,80 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
   // Get cart items from Redux
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
 
+  // ✅ Get variants as pack sizes
+  const packSizes = React.useMemo(() => {
+    if (!product.variants || product.variants.length === 0) {
+      return [
+        {
+          id: "default",
+          label: "1 Unit",
+          quantity: 1,
+          price: product.price_range?.min || 0,
+          originalPrice: product.price_range?.min || 0,
+          discount: 0,
+          inStock: product.is_active,
+        } as PackSize,
+      ];
+    }
+
+    return product.variants.map((variant) => ({
+      id: variant.id,
+      label: variant.pack_size || variant.strength || "Standard",
+      quantity: 1,
+      price: variant.price,
+      originalPrice: variant.discount_price || variant.price,
+      discount: variant.discount_price
+        ? Math.round(
+            ((variant.price - variant.discount_price) / variant.price) * 100,
+          )
+        : 0,
+      inStock: variant.stock > 0,
+      stripCount: variant.pack_size
+        ? parseInt(variant.pack_size) || undefined
+        : undefined,
+    })) as PackSize[];
+  }, [product]);
+
+  // ✅ Get discount percentage
+  const discountPercentage = React.useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      const firstVariant = product.variants[0];
+      if (firstVariant.discount_price && firstVariant.price) {
+        return Math.round(
+          ((firstVariant.price - firstVariant.discount_price) /
+            firstVariant.price) *
+            100,
+        );
+      }
+    }
+    if (product.discount_range && product.discount_range.min > 0) {
+      const price = product.price_range?.min || 0;
+      const discountPrice = product.discount_range?.min || 0;
+      if (price > 0 && discountPrice > 0) {
+        return Math.round(((price - discountPrice) / price) * 100);
+      }
+    }
+    return 0;
+  }, [product]);
+
+  // ✅ Check if product is in stock
+  const isInStock = React.useMemo(() => {
+    if (!product.variants || product.variants.length === 0) {
+      return product.is_active || false;
+    }
+    return product.variants.some((v) => v.stock > 0);
+  }, [product]);
+
   // Pack size selection
   const [selectedPack, setSelectedPack] = useState<PackSize>(
-    product.packSizes?.find((p) => p.id === product.defaultPackSizeId) ||
-      product.packSizes?.[0] || {
+    packSizes.find((p) => p.inStock) ||
+      packSizes[0] || {
         id: "default",
         label: "1 Unit",
         quantity: 1,
-        price: product.currentPrice,
-        originalPrice: product.originalPrice,
-        discount: product.discount,
+        price: product.price_range?.min || 0,
+        originalPrice: product.price_range?.min || 0,
+        discount: 0,
         inStock: true,
       },
   );
@@ -70,7 +136,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
   const isInCart = cartQuantity > 0;
 
   const handleAddToCart = () => {
-    if (product.inStock === false) {
+    if (!isInStock) {
       toast.error("This product is currently out of stock!", {
         position: "bottom-right",
         autoClose: 3000,
@@ -88,15 +154,14 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       quantity: quantity,
       packSizeId: selectedPack.id,
       packSizeLabel: selectedPack.label,
-      image: product.imageUrl,
+      image: product.thumbnail,
       maxQuantity: 99,
-      discount: selectedPack.discount || product.discount,
-      originalPrice: selectedPack.originalPrice || product.originalPrice,
+      discount: selectedPack.discount || discountPercentage,
+      originalPrice: selectedPack.originalPrice || selectedPack.price,
     };
 
     dispatch(ADD_TO_CART(cartItem));
 
-    // Show success toast with product details
     toast.success(
       <div className="flex items-center gap-3">
         <div className="bg-emerald-100 p-2 rounded-full">
@@ -126,10 +191,8 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
   };
 
   const handleRemoveFromCart = () => {
-    // Dispatch REMOVE_FROM_CART action
     dispatch(REMOVE_FROM_CART({ id: product.id, packSizeId: selectedPack.id }));
 
-    // Show removal toast
     toast.info(
       <div className="flex items-center gap-3">
         <div className="bg-amber-100 p-2 rounded-full">
@@ -155,7 +218,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
   };
 
   const handleBuyNow = () => {
-    if (product.inStock === false) {
+    if (!isInStock) {
       toast.error("This product is currently out of stock!", {
         position: "bottom-right",
         autoClose: 3000,
@@ -163,7 +226,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       return;
     }
 
-    // Add to cart first
     const cartItem = {
       id: product.id,
       productId: product.id,
@@ -172,10 +234,10 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       quantity: quantity,
       packSizeId: selectedPack.id,
       packSizeLabel: selectedPack.label,
-      image: product.imageUrl,
+      image: product.thumbnail,
       maxQuantity: 99,
-      discount: selectedPack.discount || product.discount,
-      originalPrice: selectedPack.originalPrice || product.originalPrice,
+      discount: selectedPack.discount || discountPercentage,
+      originalPrice: selectedPack.originalPrice || selectedPack.price,
     };
 
     dispatch(ADD_TO_CART(cartItem));
@@ -217,7 +279,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
     if (navigator.share) {
       navigator.share({
         title: product.name,
-        text: product.description || "Check out this product!",
+        text: product.name,
         url: window.location.href,
       });
     } else {
@@ -230,40 +292,43 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
   };
 
   const handlePackChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const pack = product.packSizes?.find((p) => p.id === e.target.value);
+    const pack = packSizes.find((p) => p.id === e.target.value);
     if (pack) {
       setSelectedPack(pack);
       setQuantity(1);
     }
   };
 
+  // ✅ Get category slug for link
+  const categorySlug =
+    product.category?.slug || slugify(product.category?.name || "");
+
   return (
     <div className="space-y-6">
       {/* Product Name & Brand */}
       <div className="space-y-2">
-        <Link
-          href={`/category/${product.category
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")}`}
-          className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
-        >
-          {product.category}
-        </Link>
+        {product.category && (
+          <Link
+            href={`/category/${categorySlug}`}
+            className="text-sm font-bold text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            {product.category.name}
+          </Link>
+        )}
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
           {product.name}
         </h1>
-        <p className="text-sm font-semibold text-slate-600">
-          By {product.brand}
-        </p>
+        {product.brand && (
+          <p className="text-sm font-semibold text-slate-600">
+            By {product.brand.name}
+          </p>
+        )}
+        {product.manufacturer && !product.brand && (
+          <p className="text-sm font-semibold text-slate-600">
+            By {product.manufacturer}
+          </p>
+        )}
       </div>
-
-      {/* Rating */}
-      {product.rating !== undefined && (
-        <RatingStars
-          rating={product.rating}
-          reviewsCount={product.reviewsCount || 0}
-        />
-      )}
 
       {/* Price */}
       <div className="flex items-end gap-3 flex-wrap">
@@ -277,14 +342,14 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
                 ৳{selectedPack.originalPrice.toFixed(2)}
               </span>
               <span className="bg-red-500 text-white text-xs font-extrabold px-2 py-1 rounded-lg">
-                Save {selectedPack.discount || product.discount}%
+                Save {selectedPack.discount || discountPercentage}%
               </span>
             </>
           )}
       </div>
 
       {/* Pack Size Selector */}
-      {product.packSizes && product.packSizes.length > 1 && (
+      {packSizes.length > 1 && (
         <div className="space-y-2">
           <label className="text-sm font-bold text-slate-700">
             Select Pack Size:
@@ -294,7 +359,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
             onChange={handlePackChange}
             className="w-full max-w-xs text-sm font-semibold border border-slate-200 rounded-xl px-4 py-2.5 bg-white focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
           >
-            {product.packSizes.map((pack) => {
+            {packSizes.map((pack) => {
               const inCart = cartItems.some(
                 (item: any) =>
                   item.id === product.id && item.packSizeId === pack.id,
@@ -303,18 +368,12 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
                 <option key={pack.id} value={pack.id}>
                   {pack.label} - ৳{pack.price.toFixed(2)}
                   {pack.discount > 0 && ` (${pack.discount}% OFF)`}
+                  {!pack.inStock && " (Out of Stock)"}
                   {inCart ? " ✓" : ""}
                 </option>
               );
             })}
           </select>
-          {selectedPack.stripCount && (
-            <p className="text-xs text-slate-500">
-              {selectedPack.stripCount} Strip
-              {selectedPack.stripCount > 1 ? "s" : ""} • {selectedPack.quantity}{" "}
-              Tablets
-            </p>
-          )}
         </div>
       )}
 
@@ -329,9 +388,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       {/* Delivery Info */}
       <div className="flex items-center gap-4 text-sm text-slate-600 bg-slate-50 px-4 py-3 rounded-xl">
         <Truck size={18} className="text-emerald-600 shrink-0" />
-        <span className="font-medium">
-          Delivery: {product.deliveryTime || "12-24 HOURS"}
-        </span>
+        <span className="font-medium">Delivery: 12-24 HOURS</span>
         <span className="w-px h-4 bg-slate-300" />
         <span className="font-medium">Free Shipping</span>
       </div>
@@ -339,7 +396,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       {/* Quantity & Actions */}
       <div className="flex flex-wrap gap-3">
         {isInCart ? (
-          // Show quantity controls if this specific pack size is in cart
           <div className="flex items-center gap-2 bg-emerald-50 rounded-xl border border-emerald-200 px-3 py-1">
             <button
               onClick={handleRemoveFromCart}
@@ -360,7 +416,6 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
             </button>
           </div>
         ) : (
-          // Show quantity selector if this specific pack size is not in cart
           <QuantitySelector
             quantity={quantity}
             onIncrease={() => setQuantity((q) => q + 1)}
@@ -370,7 +425,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
 
         <button
           onClick={handleAddToCart}
-          disabled={product.inStock === false || isAdding}
+          disabled={!isInStock || isAdding}
           className={`flex-1 min-w-35 px-6 py-3 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2 ${
             isInCart
               ? "bg-emerald-600 hover:bg-emerald-700"
@@ -397,7 +452,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
 
         <button
           onClick={handleBuyNow}
-          disabled={product.inStock === false}
+          disabled={!isInStock}
           className="flex-1 min-w-35 px-6 py-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-95 flex items-center justify-center gap-2"
         >
           Buy Now
@@ -439,7 +494,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
       </div>
 
       {/* Stock Status */}
-      {product.inStock !== false ? (
+      {isInStock ? (
         <div className="flex items-center gap-2 text-emerald-600 text-sm font-semibold">
           <Check size={16} />
           In Stock - Ready to Ship
@@ -450,67 +505,103 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({
         </div>
       )}
 
+      {/* Prescription Required */}
+      {product.is_prescription_required && (
+        <div className="flex items-center gap-2 text-amber-600 text-sm font-semibold bg-amber-50 px-4 py-2 rounded-xl">
+          <span>💊</span>
+          <span>Prescription Required</span>
+        </div>
+      )}
+
       {/* Tabs */}
       <div className="border-t border-slate-200 pt-6">
         <div className="flex gap-4 border-b border-slate-200 mb-4 overflow-x-auto">
-          {[
-            { id: "description", label: "Description" },
-            { id: "specifications", label: "Specifications" },
-            { id: "benefits", label: "Benefits" },
-          ].map((tab) => (
+          <button
+            onClick={() => setActiveTab("description")}
+            className={`pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
+              activeTab === "description"
+                ? "border-emerald-500 text-emerald-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            Description
+          </button>
+          {product.manufacturer && (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab("specifications")}
               className={`pb-3 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${
-                activeTab === tab.id
+                activeTab === "specifications"
                   ? "border-emerald-500 text-emerald-600"
                   : "border-transparent text-slate-500 hover:text-slate-700"
               }`}
             >
-              {tab.label}
+              Specifications
             </button>
-          ))}
+          )}
         </div>
 
         <div className="prose prose-sm max-w-none text-slate-600">
           {activeTab === "description" && (
             <div className="space-y-3">
-              <p>{product.description || "No description available."}</p>
-              {product.usage && (
+              <p>
+                {product.name} - {product.manufacturer || "Generic"}
+              </p>
+              <p className="text-sm">
+                Category: {product.category?.name || "N/A"}
+              </p>
+              <p className="text-sm">
+                Available in {packSizes.length} variant(s)
+              </p>
+              {product.variants && product.variants.length > 0 && (
                 <div>
-                  <h4 className="font-bold text-slate-800">How to Use:</h4>
-                  <p>{product.usage}</p>
+                  <h4 className="font-bold text-slate-800">Variants:</h4>
+                  <ul className="list-disc pl-5">
+                    {product.variants.map((v) => (
+                      <li key={v.id}>
+                        {v.strength} - {v.pack_size} (Stock: {v.stock})
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
             </div>
           )}
 
-          {activeTab === "specifications" && product.specifications && (
+          {activeTab === "specifications" && product.manufacturer && (
             <dl className="grid grid-cols-2 gap-2">
-              {Object.entries(product.specifications).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="flex items-start gap-2 py-2 border-b border-slate-100"
-                >
-                  <dt className="font-bold text-slate-800 flex-1">{key}:</dt>
-                  <dd className="text-slate-600 flex-1">{value}</dd>
+              <div className="flex items-start gap-2 py-2 border-b border-slate-100">
+                <dt className="font-bold text-slate-800 flex-1">
+                  Manufacturer:
+                </dt>
+                <dd className="text-slate-600 flex-1">
+                  {product.manufacturer}
+                </dd>
+              </div>
+              {product.brand && (
+                <div className="flex items-start gap-2 py-2 border-b border-slate-100">
+                  <dt className="font-bold text-slate-800 flex-1">Brand:</dt>
+                  <dd className="text-slate-600 flex-1">
+                    {product.brand.name}
+                  </dd>
                 </div>
-              ))}
+              )}
+              <div className="flex items-start gap-2 py-2 border-b border-slate-100">
+                <dt className="font-bold text-slate-800 flex-1">Category:</dt>
+                <dd className="text-slate-600 flex-1">
+                  {product.category?.name || "N/A"}
+                </dd>
+              </div>
+              <div className="flex items-start gap-2 py-2 border-b border-slate-100">
+                <dt className="font-bold text-slate-800 flex-1">
+                  Prescription:
+                </dt>
+                <dd className="text-slate-600 flex-1">
+                  {product.is_prescription_required
+                    ? "Required"
+                    : "Not Required"}
+                </dd>
+              </div>
             </dl>
-          )}
-
-          {activeTab === "benefits" && product.benefits && (
-            <ul className="space-y-2">
-              {product.benefits.map((benefit, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <Check
-                    size={16}
-                    className="text-emerald-500 shrink-0 mt-0.5"
-                  />
-                  <span>{benefit}</span>
-                </li>
-              ))}
-            </ul>
           )}
         </div>
       </div>

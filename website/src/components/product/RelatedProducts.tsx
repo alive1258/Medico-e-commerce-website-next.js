@@ -2,10 +2,10 @@
 // components/product/RelatedProducts.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Star, Plus, Check, Minus } from "lucide-react";
+import { Plus, Check, Minus, ShoppingBag } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -19,34 +19,70 @@ interface RelatedProductsProps {
 
 export const RelatedProducts: React.FC<RelatedProductsProps> = ({
   products,
+  currentProductId,
 }) => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
   const [addedStates, setAddedStates] = useState<{ [key: string]: boolean }>(
     {},
   );
-  // Store selected pack for each product
   const [selectedPacks, setSelectedPacks] = useState<{ [key: string]: string }>(
     {},
   );
 
-  if (products.length === 0) return null;
+  // Filter out current product
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => p.id !== currentProductId);
+  }, [products, currentProductId]);
+
+  if (filteredProducts.length === 0) return null;
+
+  // Convert variants to pack sizes
+  const getPackSizes = (product: Product): PackSize[] => {
+    if (!product.variants || product.variants.length === 0) {
+      return [
+        {
+          id: "default",
+          label: "1 Unit",
+          quantity: 1,
+          price: product.price_range?.min || 0,
+          originalPrice: product.price_range?.min || 0,
+          discount: 0,
+          inStock: product.is_active,
+        },
+      ];
+    }
+
+    return product.variants.map((variant) => ({
+      id: variant.id,
+      label: variant.pack_size || variant.strength || "Standard",
+      quantity: 1,
+      price: variant.price,
+      originalPrice: variant.discount_price || variant.price,
+      discount: variant.discount_price
+        ? Math.round(
+            ((variant.price - variant.discount_price) / variant.price) * 100,
+          )
+        : 0,
+      inStock: variant.stock > 0,
+    }));
+  };
 
   // Get selected pack for a product
   const getSelectedPack = (product: Product): PackSize => {
+    const packSizes = getPackSizes(product);
     const selectedId = selectedPacks[product.id];
-    const pack = product.packSizes?.find((p) => p.id === selectedId);
+    const pack = packSizes.find((p) => p.id === selectedId);
     return (
       pack ||
-      product.packSizes?.find((p) => p.id === product.defaultPackSizeId) ||
-      product.packSizes?.[0] || {
+      packSizes[0] || {
         id: "default",
         label: "1 Unit",
         quantity: 1,
-        price: product.currentPrice,
-        originalPrice: product.originalPrice,
-        discount: product.discount,
-        inStock: true,
+        price: product.price_range?.min || 0,
+        originalPrice: product.price_range?.min || 0,
+        discount: 0,
+        inStock: product.is_active,
       }
     );
   };
@@ -59,6 +95,36 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
     return existingItem ? existingItem.quantity : 0;
   };
 
+  // Check if product is in stock
+  const isProductInStock = (product: Product): boolean => {
+    if (!product.variants || product.variants.length === 0) {
+      return product.is_active || false;
+    }
+    return product.variants.some((v) => v.stock > 0);
+  };
+
+  // Get discount percentage
+  const getDiscountPercentage = (product: Product): number => {
+    if (product.variants && product.variants.length > 0) {
+      const firstVariant = product.variants[0];
+      if (firstVariant.discount_price && firstVariant.price) {
+        return Math.round(
+          ((firstVariant.price - firstVariant.discount_price) /
+            firstVariant.price) *
+            100,
+        );
+      }
+    }
+    if (product.discount_range && product.discount_range.min > 0) {
+      const price = product.price_range?.min || 0;
+      const discountPrice = product.discount_range?.min || 0;
+      if (price > 0 && discountPrice > 0) {
+        return Math.round(((price - discountPrice) / price) * 100);
+      }
+    }
+    return 0;
+  };
+
   const handleAddToCart = (
     e: React.MouseEvent,
     product: Product,
@@ -67,7 +133,7 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    if (product.inStock === false) {
+    if (!isProductInStock(product)) {
       toast.error("This product is currently out of stock!", {
         position: "bottom-right",
         autoClose: 3000,
@@ -83,15 +149,14 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
       quantity: 1,
       packSizeId: packSize.id,
       packSizeLabel: packSize.label,
-      image: product.imageUrl,
+      image: product.thumbnail,
       maxQuantity: 99,
-      discount: packSize.discount || product.discount,
-      originalPrice: packSize.originalPrice || product.originalPrice,
+      discount: packSize.discount || getDiscountPercentage(product),
+      originalPrice: packSize.originalPrice || packSize.price,
     };
 
     dispatch(ADD_TO_CART(cartItem));
 
-    // Show success toast
     toast.success(`✅ ${product.name} added to cart!`, {
       position: "bottom-right",
       autoClose: 3000,
@@ -102,7 +167,6 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
       theme: "light",
     });
 
-    // Set added state for animation
     setAddedStates((prev) => ({
       ...prev,
       [`${product.id}-${packSize.id}`]: true,
@@ -151,12 +215,15 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
         You May Also Like
       </h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.map((product) => {
+        {filteredProducts.map((product) => {
+          const packSizes = getPackSizes(product);
           const selectedPack = getSelectedPack(product);
           const cartQuantity = getCartItemQuantity(product.id, selectedPack.id);
           const isInCart = cartQuantity > 0;
           const isAdded =
             addedStates[`${product.id}-${selectedPack.id}`] || false;
+          const inStock = isProductInStock(product);
+          const discount = getDiscountPercentage(product);
 
           return (
             <div
@@ -165,16 +232,22 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
             >
               <Link href={`/product/${product.slug}`} className="block">
                 <div className="relative aspect-square bg-slate-50">
-                  <Image
-                    src={product.imageUrl}
-                    alt={product.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 640px) 50vw, 25vw"
-                  />
-                  {product.discount > 0 && (
+                  {product.thumbnail ? (
+                    <Image
+                      src={product.thumbnail}
+                      alt={product.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                      <ShoppingBag className="w-12 h-12 text-slate-300" />
+                    </div>
+                  )}
+                  {discount > 0 && (
                     <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-md">
-                      {product.discount}% OFF
+                      {discount}% OFF
                     </span>
                   )}
                   {isInCart && (
@@ -182,15 +255,28 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                       {cartQuantity} in Cart
                     </span>
                   )}
+                  {!inStock && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="bg-red-500 text-white text-xs font-extrabold px-3 py-1 rounded-lg">
+                        Out of Stock
+                      </span>
+                    </div>
+                  )}
                 </div>
               </Link>
 
               <div className="p-3 flex-1 flex flex-col">
                 <Link href={`/product/${product.slug}`} className="flex-1">
-                  <h4 className="text-lg font-bold text-slate-800 line-clamp-2 min-h-8 hover:text-emerald-600 transition-colors">
+                  <h4 className="text-sm font-bold text-slate-800 line-clamp-2 min-h-10 hover:text-emerald-600 transition-colors">
                     {product.name}
                   </h4>
                 </Link>
+
+                {product.brand && (
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    {product.brand.name}
+                  </p>
+                )}
 
                 <div className="flex items-center justify-between mt-1">
                   <Link href={`/product/${product.slug}`}>
@@ -206,30 +292,19 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                       </span>
                     </div>
                   </Link>
-
-                  {product.rating && (
-                    <div className="flex items-center gap-1">
-                      <Star
-                        size={12}
-                        className="fill-amber-400 text-amber-400 stroke-none"
-                      />
-                      <span className="text-xs font-bold text-slate-600">
-                        {product.rating}
-                      </span>
-                    </div>
-                  )}
                 </div>
 
                 {/* Pack Size Selector */}
-                {product.packSizes && product.packSizes.length > 1 && (
+                {packSizes.length > 1 && (
                   <div className="mt-1">
                     <select
                       value={selectedPack.id}
                       onChange={(e) => handlePackChange(e, product.id)}
-                      className="w-full text-[12px] font-semibold border border-slate-200 rounded-lg px-2 py-1.5 bg-slate-50 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
+                      className="w-full text-[10px] font-semibold border border-slate-200 rounded-lg px-1.5 py-1 bg-slate-50 focus:outline-none focus:border-emerald-500 transition-colors cursor-pointer"
                       onClick={(e) => e.stopPropagation()}
+                      disabled={!inStock}
                     >
-                      {product.packSizes.map((pack) => {
+                      {packSizes.map((pack) => {
                         const inCart = cartItems.some(
                           (item: any) =>
                             item.id === product.id &&
@@ -238,6 +313,7 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                         return (
                           <option key={pack.id} value={pack.id}>
                             {pack.label} - ৳{pack.price.toFixed(2)}
+                            {!pack.inStock && " (Out of Stock)"}
                             {inCart ? " ✓" : ""}
                           </option>
                         );
@@ -268,6 +344,7 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                         }
                         className="p-1 rounded hover:bg-emerald-100 transition-colors text-emerald-600"
                         aria-label="Add one more"
+                        disabled={!inStock}
                       >
                         <Plus size={14} className="stroke-3" />
                       </button>
@@ -275,8 +352,8 @@ export const RelatedProducts: React.FC<RelatedProductsProps> = ({
                   ) : (
                     <button
                       onClick={(e) => handleAddToCart(e, product, selectedPack)}
-                      disabled={product.inStock === false}
-                      className={`w-full font-black text-base px-2 py-1.5 rounded-lg transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 uppercase tracking-wider hover:shadow-md ${
+                      disabled={!inStock}
+                      className={`w-full font-black text-xs px-2 py-1.5 rounded-lg transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1 uppercase tracking-wider hover:shadow-md ${
                         isAdded
                           ? "bg-emerald-600 text-white"
                           : "bg-emerald-500 hover:bg-emerald-600 text-white"
