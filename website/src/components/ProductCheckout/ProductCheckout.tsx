@@ -1,9 +1,10 @@
 /* eslint-disable react-hooks/purity */
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ import {
   Plus,
   Minus,
   AlertCircle,
+  LogIn,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -36,6 +38,7 @@ import {
   UPDATE_QUANTITY,
 } from "@/src/redux/features/cartSlice";
 import { useCreateOrderMutation } from "@/src/redux/api/orderApi";
+import { useGetMyProfileQuery } from "@/src/redux/api/authApi";
 
 // Types
 interface CartItem {
@@ -61,6 +64,44 @@ interface CheckoutFormData {
   deliveryMethod: "inside-dhaka" | "outside-dhaka";
   paymentMethod: "cod" | "online";
   addressId?: string;
+}
+
+// Response type from backend
+interface IOrderApiResponse {
+  apiVersion: string;
+  success: boolean;
+  message: string;
+  status: number;
+  data: {
+    order: {
+      id: string;
+      order_number: string;
+      user_id: string;
+      address_id: string;
+      subtotal: number;
+      discount: string | number;
+      delivery_charge: string | number;
+      total_amount: number;
+      payment_status: string;
+      payment_method: string;
+      order_status: string;
+      notes?: string;
+      placed_at: string;
+      created_at: string;
+      updated_at: string;
+    };
+    items: Array<{
+      id: string;
+      order_id: string;
+      product_variant_id: string;
+      product_name: string;
+      sku: string;
+      quantity: number;
+      unit_price: number;
+      total_price: number;
+      created_at: string;
+    }>;
+  };
 }
 
 // Components
@@ -147,6 +188,25 @@ export default function ProductCheckout() {
   const router = useRouter();
   const dispatch = useDispatch();
 
+  // Get user profile
+  const { data: profileData, isLoading: profileLoading } =
+    useGetMyProfileQuery();
+
+  const user = profileData?.data?.user;
+  const isAuthenticated = !!user;
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!profileLoading && !isAuthenticated) {
+      toast.warning("Please login to place your order!", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      sessionStorage.setItem("redirectAfterLogin", "/checkout");
+      router.push("/login");
+    }
+  }, [isAuthenticated, profileLoading, router]);
+
   // Get cart data from Redux
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
   const totalQuantity = useSelector(
@@ -171,6 +231,18 @@ export default function ProductCheckout() {
   const [couponCode, setCouponCode] = useState("");
   const [isCouponApplied, setIsCouponApplied] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+
+  // Populate form with user data when available
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || "",
+        emailAddress: user.email || "",
+        mobileNumber: user.mobile || "",
+      }));
+    }
+  }, [user]);
 
   // Calculate order summary from real cart data
   const subtotal = cartItems.reduce(
@@ -234,6 +306,17 @@ export default function ProductCheckout() {
   };
 
   const handlePlaceOrder = async () => {
+    // Check authentication
+    if (!isAuthenticated) {
+      toast.error("Please login to place your order!", {
+        position: "bottom-right",
+        autoClose: 3000,
+      });
+      sessionStorage.setItem("redirectAfterLogin", "/checkout");
+      router.push("/login");
+      return;
+    }
+
     // Validate form
     if (!formData.fullName || !formData.mobileNumber || !formData.fullAddress) {
       toast.error("Please fill in all required fields!", {
@@ -255,36 +338,42 @@ export default function ProductCheckout() {
     setApiError(null);
 
     try {
-      // Prepare order items
-      const orderItems = cartItems.map((item: CartItem) => ({
-        product_variant_id: item.packSizeId || item.id,
-        product_name: item.name,
-        sku: item.sku || `SKU-${item.id}`,
-        quantity: item.quantity,
-        unit_price: item.price,
-        total_price: item.price * item.quantity,
-      }));
-
-      // Prepare order data
       const orderData = {
-        address_id: formData.addressId || "temp-address-id",
-        payment_method: formData.paymentMethod === "cod" ? "cod" : "online",
-        delivery_charge: deliveryFee,
-        coupon_code: isCouponApplied ? couponCode : undefined,
-        notes: formData.optionalNote,
-        items: orderItems,
+        payment_method: formData.paymentMethod === "cod" ? "COD" : "SSLCOMMERZ",
+        notes: formData.optionalNote || "",
+        items: cartItems.map((item: CartItem) => ({
+          product_variant_id: item.packSizeId || item.id,
+          product_name: item.name,
+          sku: item.sku || `SKU-${item.id}`,
+          quantity: item.quantity,
+          unit_price: item.price,
+          total_price: item.price * item.quantity,
+        })),
+        shipping_address: {
+          address_line: formData.fullAddress,
+          phone: formData.mobileNumber,
+          email: formData.emailAddress || "",
+        },
       };
 
-      console.log("Sending order data:", orderData);
-
       // Call API using RTK Query mutation
-      const response = await createOrder(orderData).unwrap();
+      const response = (await createOrder(
+        orderData,
+      ).unwrap()) as unknown as IOrderApiResponse;
 
-      console.log("Order response:", response);
+      console.log("📥 Full response:", JSON.stringify(response, null, 2));
+
+      // ✅ Get order and items from response.data
+      const { order, items } = response.data;
+
+      if (!order) {
+        console.error("❌ Order not found in response:", response);
+        throw new Error("Order not found in response");
+      }
 
       // Store order data in sessionStorage for confirmation page
       const orderConfirmationData = {
-        orderId: response.data.order_number || response.data.id,
+        orderId: order.order_number || order.id || `ORD-${Date.now()}`,
         customerName: formData.fullName,
         customerEmail: formData.emailAddress || "N/A",
         customerPhone: formData.mobileNumber,
@@ -298,19 +387,21 @@ export default function ProductCheckout() {
           image: item.image,
           packSizeLabel: item.packSizeLabel,
         })),
-        subtotal,
-        discount: totalDiscount,
-        deliveryFee,
-        total: totalPayable,
+        subtotal: Number(order.subtotal) || subtotal,
+        discount: Number(order.discount) || totalDiscount,
+        deliveryFee: Number(order.delivery_charge) || deliveryFee,
+        total: Number(order.total_amount) || totalPayable,
         paymentMethod: formData.paymentMethod,
         deliveryMethod:
           formData.deliveryMethod === "inside-dhaka"
             ? "Inside Dhaka"
             : "Outside Dhaka",
         optionalNote: formData.optionalNote,
-        orderStatus: response.data.order_status || "pending",
-        paymentStatus: response.data.payment_status || "unpaid",
+        orderStatus: order.order_status || "pending",
+        paymentStatus: order.payment_status || "unpaid",
         estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+        paymentMethodFromBackend: order.payment_method,
+        itemsFromBackend: items || [],
       };
 
       sessionStorage.setItem(
@@ -322,8 +413,7 @@ export default function ProductCheckout() {
       dispatch(CLEAR_CART());
 
       toast.success(
-        response.message ||
-          "🎉 Order placed successfully! Thank you for shopping with us.",
+        "🎉 Order placed successfully! Thank you for shopping with us.",
         {
           position: "bottom-right",
           autoClose: 3000,
@@ -333,14 +423,36 @@ export default function ProductCheckout() {
       // Redirect to order confirmation
       setTimeout(() => {
         router.push("/order-confirmation");
-      }, 1500);
+      }, 500);
     } catch (error: any) {
-      console.error("Order placement error:", error);
+      console.error("❌ Order placement error:", error);
+
+      // Handle authentication errors
+      if (error?.status === 401 || error?.status === 403) {
+        toast.error("Your session has expired. Please login again.", {
+          position: "bottom-right",
+          autoClose: 3000,
+        });
+        sessionStorage.setItem("redirectAfterLogin", "/checkout");
+        router.push("/login");
+        return;
+      }
+
+      // Handle validation errors from backend
+      if (error?.data?.message) {
+        const messages = Array.isArray(error.data.message)
+          ? error.data.message.join(", ")
+          : error.data.message;
+        setApiError(messages);
+        toast.error(messages, {
+          position: "bottom-right",
+          autoClose: 5000,
+        });
+        return;
+      }
 
       const errorMessage =
-        error?.data?.message ||
-        error?.message ||
-        "Failed to place order. Please try again.";
+        error?.message || "Failed to place order. Please try again.";
       setApiError(errorMessage);
 
       toast.error(errorMessage, {
@@ -349,6 +461,46 @@ export default function ProductCheckout() {
       });
     }
   };
+
+  // Show loading state while checking authentication
+  if (profileLoading) {
+    return (
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4" />
+          <p className="text-slate-600 font-semibold">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, show login prompt
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-slate-50 min-h-screen py-20">
+        <div className="container mx-auto px-4 max-w-4xl text-center">
+          <div className="bg-white rounded-2xl p-12 shadow-sm">
+            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogIn size={40} className="text-amber-600" />
+            </div>
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
+              Please Login to Continue
+            </h2>
+            <p className="text-slate-500 mb-6">
+              You need to be logged in to place an order.
+            </p>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
+            >
+              <LogIn size={18} />
+              Login to Your Account
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // If cart is empty, show empty state
   if (cartItems.length === 0) {
@@ -390,6 +542,24 @@ export default function ProductCheckout() {
           </Link>
           <h1 className="text-2xl font-extrabold text-slate-900">Checkout</h1>
           <div className="w-24" />
+        </div>
+
+        {/* User Info Banner */}
+        <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <User size={18} className="text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">
+                {user?.name || "User"}
+              </p>
+              <p className="text-xs text-slate-500">{user?.email}</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+            Logged In
+          </span>
         </div>
 
         {/* API Error Display */}

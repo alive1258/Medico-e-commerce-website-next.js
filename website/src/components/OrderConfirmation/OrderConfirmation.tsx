@@ -349,7 +349,7 @@ export default function OrderConfirmationPage() {
             Download Invoice
           </button>
           <Link
-            href="/account"
+            href="/dashboard/account"
             className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 hover:border-emerald-500 text-slate-700 font-bold rounded-xl transition-all shadow-sm hover:shadow-md"
           >
             View Order

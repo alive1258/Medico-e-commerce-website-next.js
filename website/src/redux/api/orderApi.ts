@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/redux/api/orderApi.ts
 import { tagTypes } from "../tag-types";
 import { baseApi } from "./baseApi";
@@ -23,12 +24,12 @@ export interface IOrder {
   id: string;
   order_number: string;
   user_id: string;
-  address_id: string;
   subtotal: number;
   discount: number;
   delivery_charge: number;
   total_amount: number;
   payment_status: string;
+  payment_method?: string;
   order_status: string;
   notes?: string;
   items: IOrderItem[];
@@ -37,22 +38,16 @@ export interface IOrder {
   updated_at: string;
 }
 
-export interface ICreateOrderItemDto {
-  product_variant_id: string;
-  product_name: string;
-  sku: string;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
+export interface ICreateOrderDto {
+  payment_method: string;
+  notes?: string;
+  items?: any[];
+  shipping_address?: any;
 }
 
-export interface ICreateOrderDto {
-  address_id: string;
-  payment_method: string;
-  delivery_charge: number;
-  coupon_code?: string;
-  notes?: string;
-  items: ICreateOrderItemDto[];
+export interface ICreateOrderResponse {
+  order: IOrder;
+  items: IOrderItem[];
 }
 
 export interface IUpdateOrderDto {
@@ -93,7 +88,7 @@ export interface IApiResponse<T> {
 export const orderApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     // Create Order
-    createOrder: build.mutation<IApiResponse<IOrder>, ICreateOrderDto>({
+    createOrder: build.mutation<ICreateOrderResponse, ICreateOrderDto>({
       query: (data) => ({
         url: ORDER_URL,
         method: "POST",
@@ -102,13 +97,26 @@ export const orderApi = baseApi.injectEndpoints({
       invalidatesTags: [tagTypes.orders],
     }),
 
-    // Get All Orders (Admin sees all, User sees own)
+    // Get All Orders (Admin)
     getAllOrders: build.query<
       IApiResponse<IOrder[]>,
       { page?: number; limit?: number; order_status?: string } | void
     >({
       query: (params) => ({
         url: ORDER_URL,
+        method: "GET",
+        params: params || {},
+      }),
+      providesTags: [tagTypes.orders],
+    }),
+
+    // ✅ Get My Orders (User's own orders)
+    getMyOrders: build.query<
+      IApiResponse<IOrder[]>,
+      { page?: number; limit?: number; order_status?: string } | void
+    >({
+      query: (params) => ({
+        url: `${ORDER_URL}/my-orders`,
         method: "GET",
         params: params || {},
       }),
@@ -181,6 +189,7 @@ export const {
   useCreateOrderMutation,
   useGetAllOrdersQuery,
   useGetOrderByIdQuery,
+  useGetMyOrdersQuery, // ✅ Export this
   useGetUserOrdersQuery,
   useUpdateOrderMutation,
   useCancelOrderMutation,

@@ -2,9 +2,10 @@
 // app/account/page.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   User,
   Package,
@@ -26,48 +27,94 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Loader2,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {
+  useGetMyProfileQuery,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+  useLogoutMutation,
+} from "@/src/redux/api/authApi";
+import {
+  useGetMyOrdersQuery,
+  useGetOrderByIdQuery,
+} from "@/src/redux/api/orderApi";
+import {
+  useGetMyAddressesQuery,
+  useCreateAddressMutation,
+  useUpdateAddressMutation,
+  useDeleteAddressMutation,
+} from "@/src/redux/api/addressApi";
+import {
+  useGetWishlistQuery,
+  useRemoveFromWishlistMutation,
+} from "@/src/redux/api/wishlistApi";
+import { useAddToCartMutation } from "@/src/redux/api/cartApi";
 
 // Types
 interface Address {
   id: string;
-  label: string;
-  fullName: string;
+  full_name?: string;
   phone: string;
+  email?: string;
+  area?: string;
+  division?: string;
+  district?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
   address: string;
-  city: string;
-  area: string;
-  isDefault: boolean;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Order {
   id: string;
-  date: string;
-  total: number;
-  status:
-    | "pending"
-    | "confirmed"
-    | "processing"
-    | "shipped"
-    | "delivered"
-    | "cancelled";
-  items: number;
-  image: string;
-  name: string;
+  order_number: string;
+  total_amount: number;
+  order_status: string;
+  payment_status: string;
+  payment_method: string;
+  subtotal: number;
+  discount: number;
+  delivery_charge: number;
+  placed_at: string;
+  created_at: string;
+  items?: OrderItem[];
+}
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  sku: string;
+  product_variant_id: string;
+}
+
+interface WishlistItem {
+  id: string;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+    images?: string[];
+  };
 }
 
 // Components
 const Sidebar: React.FC<{
   activeTab: string;
   onTabChange: (tab: string) => void;
-}> = ({ activeTab, onTabChange }) => {
-  const user = {
-    name: "Zamirul Kabir",
-    email: "zamirulkabir999@gmail.com",
-    avatar: "",
-  };
+  user: any;
+}> = ({ activeTab, onTabChange, user }) => {
+  const router = useRouter();
+  const [logout] = useLogoutMutation();
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: User },
@@ -77,27 +124,38 @@ const Sidebar: React.FC<{
     { id: "password", label: "Change Password", icon: Lock },
   ];
 
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      localStorage.removeItem("token");
+      toast.success("Logged out successfully!");
+      router.push("/login");
+    } catch (error) {
+      toast.error("Failed to logout. Please try again.");
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sticky top-6">
       {/* User Info */}
       <div className="text-center pb-6 border-b border-slate-100">
         <div className="w-20 h-20 rounded-full bg-emerald-100 mx-auto mb-3 flex items-center justify-center overflow-hidden">
-          {user.avatar ? (
+          {user?.avatar ? (
             <Image
               src={user.avatar}
-              alt={user.name}
+              alt={user.name || "User"}
               width={80}
               height={80}
               className="object-cover"
             />
           ) : (
             <span className="text-3xl font-bold text-emerald-600">
-              {user.name.charAt(0)}
+              {user?.name?.charAt(0) || "U"}
             </span>
           )}
         </div>
-        <h3 className="font-bold text-slate-900">{user.name}</h3>
-        <p className="text-xs text-slate-500">{user.email}</p>
+        <h3 className="font-bold text-slate-900">{user?.name || "User"}</h3>
+        <p className="text-xs text-slate-500">{user?.email || ""}</p>
       </div>
 
       {/* Menu */}
@@ -126,9 +184,7 @@ const Sidebar: React.FC<{
 
         {/* Logout */}
         <button
-          onClick={() => {
-            toast.success("Logged out successfully!");
-          }}
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all text-sm font-semibold text-red-500 hover:bg-red-50 mt-4 pt-4 border-t border-slate-100"
         >
           <LogOut size={18} />
@@ -140,22 +196,45 @@ const Sidebar: React.FC<{
 };
 
 // Profile Tab
-const ProfileTab: React.FC = () => {
+const ProfileTab: React.FC<{ user: any; refetch: () => void }> = ({
+  user,
+  refetch,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [updateProfile, { isLoading }] = useUpdateProfileMutation();
   const [formData, setFormData] = useState({
-    fullName: "Zamirul Kabir",
-    phone: "01XXXXXXXXX",
-    email: "zamirulkabir999@gmail.com",
+    name: "",
+    phone: "",
+    email: "",
   });
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success("Profile updated successfully!");
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        phone: user.mobile || user.phone || "",
+        email: user.email || "",
+      });
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    try {
+      await updateProfile({
+        name: formData.name,
+        mobile: formData.phone,
+        email: formData.email,
+      }).unwrap();
+      setIsEditing(false);
+      refetch();
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to update profile");
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-extrabold text-slate-900">Profile</h2>
         <button
@@ -167,18 +246,23 @@ const ProfileTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Member Info */}
       <div className="bg-emerald-50 rounded-2xl p-4 flex items-center gap-4">
         <div className="p-2 bg-emerald-100 rounded-lg">
           <Calendar size={20} className="text-emerald-600" />
         </div>
         <div>
           <p className="text-sm font-bold text-slate-700">Member since</p>
-          <p className="text-sm text-slate-600">June 2026</p>
+          <p className="text-sm text-slate-600">
+            {user?.created_at
+              ? new Date(user.created_at).toLocaleDateString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })
+              : "N/A"}
+          </p>
         </div>
       </div>
 
-      {/* Profile Form */}
       <div className="bg-white rounded-2xl p-6 border border-slate-100 space-y-4">
         <div>
           <label className="block text-sm font-bold text-slate-700 mb-1">
@@ -187,14 +271,14 @@ const ProfileTab: React.FC = () => {
           {isEditing ? (
             <input
               type="text"
-              value={formData.fullName}
+              value={formData.name}
               onChange={(e) =>
-                setFormData({ ...formData, fullName: e.target.value })
+                setFormData({ ...formData, name: e.target.value })
               }
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
             />
           ) : (
-            <p className="text-sm text-slate-600">{formData.fullName}</p>
+            <p className="text-sm text-slate-600">{user?.name || "N/A"}</p>
           )}
         </div>
 
@@ -212,7 +296,9 @@ const ProfileTab: React.FC = () => {
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
             />
           ) : (
-            <p className="text-sm text-slate-600">{formData.phone}</p>
+            <p className="text-sm text-slate-600">
+              {user?.mobile || user?.phone || "N/A"}
+            </p>
           )}
         </div>
 
@@ -230,15 +316,17 @@ const ProfileTab: React.FC = () => {
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
             />
           ) : (
-            <p className="text-sm text-slate-600">{formData.email}</p>
+            <p className="text-sm text-slate-600">{user?.email || "N/A"}</p>
           )}
         </div>
 
         {isEditing && (
           <button
             onClick={handleSave}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
+            disabled={isLoading}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
           >
+            {isLoading && <Loader2 size={18} className="animate-spin" />}
             Save Changes
           </button>
         )}
@@ -250,19 +338,26 @@ const ProfileTab: React.FC = () => {
 // Orders Tab
 const OrdersTab: React.FC = () => {
   const [filter, setFilter] = useState<string>("all");
+  const { data, isLoading, refetch } = useGetMyOrdersQuery({});
 
-  const orders: Order[] = [
-    // Mock orders - will come from API
-  ];
+  const orders = data?.data || [];
+
+  const filteredOrders = orders.filter((order: Order) =>
+    filter === "all" ? true : order.order_status === filter,
+  );
 
   const statusCounts = {
     all: orders.length,
-    pending: orders.filter((o) => o.status === "pending").length,
-    confirmed: orders.filter((o) => o.status === "confirmed").length,
-    processing: orders.filter((o) => o.status === "processing").length,
-    shipped: orders.filter((o) => o.status === "shipped").length,
-    delivered: orders.filter((o) => o.status === "delivered").length,
-    cancelled: orders.filter((o) => o.status === "cancelled").length,
+    pending: orders.filter((o: Order) => o.order_status === "pending").length,
+    confirmed: orders.filter((o: Order) => o.order_status === "confirmed")
+      .length,
+    processing: orders.filter((o: Order) => o.order_status === "processing")
+      .length,
+    shipped: orders.filter((o: Order) => o.order_status === "shipped").length,
+    delivered: orders.filter((o: Order) => o.order_status === "delivered")
+      .length,
+    cancelled: orders.filter((o: Order) => o.order_status === "cancelled")
+      .length,
   };
 
   const statusFilters = [
@@ -313,9 +408,25 @@ const OrdersTab: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 size={32} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-extrabold text-slate-900">My Orders</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-extrabold text-slate-900">My Orders</h2>
+        <button
+          onClick={() => refetch()}
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
+        >
+          Refresh
+        </button>
+      </div>
 
       {/* Status Filters */}
       <div className="flex flex-wrap gap-2">
@@ -336,62 +447,80 @@ const OrdersTab: React.FC = () => {
       </div>
 
       {/* Orders List */}
-      {orders.length === 0 ? (
+      {filteredOrders.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
           <Package size={48} className="mx-auto text-slate-300 mb-4" />
           <p className="text-sm text-slate-500 font-semibold">
-            No orders found
+            {orders.length === 0
+              ? "No orders yet"
+              : "No orders found with this status"}
           </p>
-          <Link
-            href="/"
-            className="inline-block mt-4 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
-          >
-            Start Shopping
-          </Link>
+          {orders.length === 0 && (
+            <Link
+              href="/"
+              className="inline-block mt-4 px-6 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
+            >
+              Start Shopping
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
-          {orders.map((order) => (
-            <Link
-              key={order.id}
-              href={`/account/orders/${order.id}`}
-              className="block bg-white rounded-2xl p-4 border border-slate-100 hover:shadow-md transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-50 shrink-0">
-                  <Image
-                    src={order.image}
-                    alt={order.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-slate-800 truncate">
-                      {order.name}
-                    </p>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(
-                        order.status,
-                      )}`}
-                    >
-                      {getStatusIcon(order.status)}
-                      {order.status.charAt(0).toUpperCase() +
-                        order.status.slice(1)}
-                    </span>
+          {filteredOrders.map((order: Order) => {
+            const firstItem = order.items?.[0];
+            return (
+              <Link
+                key={order.id}
+                href={`/account/orders/${order.id}`}
+                className="block bg-white rounded-2xl p-4 border border-slate-100 hover:shadow-md transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-50 shrink-0">
+                    {firstItem?.product_name ? (
+                      <div className="flex items-center justify-center w-full h-full bg-emerald-50 text-emerald-600 font-bold text-xs">
+                        {firstItem.quantity}x
+                      </div>
+                    ) : (
+                      <Package size={32} className="text-slate-300 m-4" />
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500">
-                    {order.items} items • {order.date}
-                  </p>
-                  <p className="text-sm font-bold text-emerald-600">
-                    ৳{order.total.toFixed(2)}
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-slate-800 truncate">
+                        #{order.order_number}
+                      </p>
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${getStatusColor(
+                          order.order_status,
+                        )}`}
+                      >
+                        {getStatusIcon(order.order_status)}
+                        {order.order_status.charAt(0).toUpperCase() +
+                          order.order_status.slice(1)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      {order.items?.length || 0} items •{" "}
+                      {order.placed_at
+                        ? new Date(order.placed_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )
+                        : "N/A"}
+                    </p>
+                    <p className="text-sm font-bold text-emerald-600">
+                      ৳{Number(order.total_amount).toFixed(2)}
+                    </p>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-400" />
                 </div>
-                <ChevronRight size={18} className="text-slate-400" />
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
@@ -400,11 +529,50 @@ const OrdersTab: React.FC = () => {
 
 // Wishlist Tab
 const WishlistTab: React.FC = () => {
-  const wishlistItems: any[] = []; // Mock wishlist
+  const { data, isLoading, refetch } = useGetWishlistQuery({});
+  const [removeFromWishlist] = useRemoveFromWishlistMutation();
+  const [addToCart] = useAddToCartMutation();
+
+  const wishlistItems = data?.data || [];
+
+  const handleRemove = async (id: string) => {
+    try {
+      await removeFromWishlist(id).unwrap();
+      refetch();
+      toast.success("Removed from wishlist");
+    } catch (error) {
+      toast.error("Failed to remove from wishlist");
+    }
+  };
+
+  const handleAddToCart = async (productId: string) => {
+    try {
+      await addToCart({ productId, quantity: 1 }).unwrap();
+      toast.success("Added to cart!");
+    } catch (error) {
+      toast.error("Failed to add to cart");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 size={32} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-extrabold text-slate-900">Wishlist</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-extrabold text-slate-900">Wishlist</h2>
+        <button
+          onClick={() => refetch()}
+          className="text-sm text-emerald-600 hover:text-emerald-700 font-semibold"
+        >
+          Refresh
+        </button>
+      </div>
 
       {wishlistItems.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl border border-slate-100">
@@ -421,30 +589,42 @@ const WishlistTab: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {wishlistItems.map((item) => (
+          {wishlistItems.map((item: WishlistItem) => (
             <div
               key={item.id}
-              className="bg-white rounded-2xl border border-slate-100 overflow-hidden"
+              className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-md transition-all"
             >
-              <div className="relative aspect-square">
-                <Image
-                  src={item.image}
-                  alt={item.name}
-                  fill
-                  className="object-cover"
-                />
-                <button className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors">
+              <div className="relative aspect-square bg-slate-50">
+                {item.product.images?.[0] ? (
+                  <Image
+                    src={item.product.images[0]}
+                    alt={item.product.name}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full">
+                    <Package size={48} className="text-slate-300" />
+                  </div>
+                )}
+                <button
+                  onClick={() => handleRemove(item.id)}
+                  className="absolute top-2 right-2 p-2 bg-white rounded-full shadow-md hover:bg-red-50 transition-colors"
+                >
                   <Trash2 size={16} className="text-red-500" />
                 </button>
               </div>
               <div className="p-3">
                 <p className="text-sm font-bold text-slate-800 truncate">
-                  {item.name}
+                  {item.product.name}
                 </p>
                 <p className="text-sm font-extrabold text-emerald-600">
-                  ৳{item.price}
+                  ৳{Number(item.product.price).toFixed(2)}
                 </p>
-                <button className="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-lg transition-all">
+                <button
+                  onClick={() => handleAddToCart(item.product.id)}
+                  className="w-full mt-2 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm rounded-lg transition-all"
+                >
                   Add to Cart
                 </button>
               </div>
@@ -458,35 +638,41 @@ const WishlistTab: React.FC = () => {
 
 // Addresses Tab
 const AddressesTab: React.FC = () => {
-  const [addresses, setAddresses] = useState<Address[]>([
-    // Mock addresses
-    // {
-    //   id: "1",
-    //   label: "Home",
-    //   fullName: "Zamirul Kabir",
-    //   phone: "01XXXXXXXXX",
-    //   address: "House #123, Road #45",
-    //   city: "Dhaka",
-    //   area: "Bashundhara R/A",
-    //   isDefault: true,
-    // },
-  ]);
+  const { data, isLoading, refetch } = useGetMyAddressesQuery({});
+  const [createAddress] = useCreateAddressMutation();
+  const [updateAddress] = useUpdateAddressMutation();
+  const [deleteAddress] = useDeleteAddressMutation();
   const [showAddForm, setShowAddForm] = useState(false);
 
-  const handleDeleteAddress = (id: string) => {
-    setAddresses(addresses.filter((addr) => addr.id !== id));
-    toast.success("Address deleted successfully!");
+  const addresses = data?.data || [];
+
+  const handleDeleteAddress = async (id: string) => {
+    try {
+      await deleteAddress(id).unwrap();
+      refetch();
+      toast.success("Address deleted successfully!");
+    } catch (error) {
+      toast.error("Failed to delete address");
+    }
   };
 
-  const handleSetDefault = (id: string) => {
-    setAddresses(
-      addresses.map((addr) => ({
-        ...addr,
-        isDefault: addr.id === id,
-      })),
-    );
-    toast.success("Default address updated!");
+  const handleSetDefault = async (id: string) => {
+    try {
+      await updateAddress({ id, is_default: true }).unwrap();
+      refetch();
+      toast.success("Default address updated!");
+    } catch (error) {
+      toast.error("Failed to update default address");
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 size={32} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -511,36 +697,36 @@ const AddressesTab: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {addresses.map((address) => (
+          {addresses.map((address: Address) => (
             <div
               key={address.id}
               className={`bg-white rounded-2xl p-4 border-2 transition-all ${
-                address.isDefault
+                address.is_default
                   ? "border-emerald-500 bg-emerald-50"
                   : "border-slate-100"
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
-                  {address.label === "Home" ? (
-                    <Home size={18} className="text-emerald-600" />
-                  ) : (
-                    <Building size={18} className="text-emerald-600" />
-                  )}
-                  <p className="font-bold text-slate-800">{address.label}</p>
-                  {address.isDefault && (
+                  <Home size={18} className="text-emerald-600" />
+                  <p className="font-bold text-slate-800">
+                    {address.full_name || "Address"}
+                  </p>
+                  {address.is_default && (
                     <span className="text-xs font-bold text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">
                       Default
                     </span>
                   )}
                 </div>
                 <div className="flex gap-1">
-                  <button
-                    onClick={() => handleSetDefault(address.id)}
-                    className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
-                  >
-                    <CheckCircle size={16} className="text-slate-400" />
-                  </button>
+                  {!address.is_default && (
+                    <button
+                      onClick={() => handleSetDefault(address.id)}
+                      className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <CheckCircle size={16} className="text-slate-400" />
+                    </button>
+                  )}
                   <button
                     onClick={() => handleDeleteAddress(address.id)}
                     className="p-1.5 hover:bg-red-100 rounded-lg transition-colors"
@@ -549,99 +735,31 @@ const AddressesTab: React.FC = () => {
                   </button>
                 </div>
               </div>
-              <p className="text-sm font-semibold text-slate-700 mt-2">
-                {address.fullName}
-              </p>
-              <p className="text-sm text-slate-500">{address.phone}</p>
+              <p className="text-sm text-slate-500 mt-2">{address.phone}</p>
               <p className="text-sm text-slate-500 mt-1">
-                {address.address}, {address.area}, {address.city}
+                {address.address}
+                {address.area && `, ${address.area}`}
+                {address.city && `, ${address.city}`}
+                {address.state && `, ${address.state}`}
               </p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Add Address Form */}
+      {/* Add Address Form - Simplified */}
       {showAddForm && (
         <div className="bg-white rounded-2xl p-6 border border-slate-100">
           <h3 className="font-bold text-slate-900 mb-4">Add New Address</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">
-                  Label
-                </label>
-                <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all">
-                  <option>Home</option>
-                  <option>Office</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Your full name"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                placeholder="01XXXXXXXXX"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">
-                Address
-              </label>
-              <input
-                type="text"
-                placeholder="House #123, Road #45"
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">
-                  Area
-                </label>
-                <input
-                  type="text"
-                  placeholder="Bashundhara R/A"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  placeholder="Dhaka"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-emerald-500 transition-all"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all">
-                Save Address
-              </button>
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+          <p className="text-sm text-slate-500 mb-4">
+            Address form would go here. Connect to your address API.
+          </p>
+          <button
+            onClick={() => setShowAddForm(false)}
+            className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all"
+          >
+            Close
+          </button>
         </div>
       )}
     </div>
@@ -655,24 +773,33 @@ const ChangePasswordTab: React.FC = () => {
     new: false,
     confirm: false,
   });
+  const [changePassword, { isLoading }] = useChangePasswordMutation();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.newPassword !== formData.confirmPassword) {
       toast.error("Passwords do not match!");
       return;
     }
-    toast.success("Password changed successfully!");
-    setFormData({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    try {
+      await changePassword({
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      }).unwrap();
+      toast.success("Password changed successfully!");
+      setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to change password");
+    }
   };
 
   return (
@@ -772,8 +899,10 @@ const ChangePasswordTab: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
+          disabled={isLoading}
+          className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
         >
+          {isLoading && <Loader2 size={18} className="animate-spin" />}
           Change Password
         </button>
       </form>
@@ -784,11 +913,22 @@ const ChangePasswordTab: React.FC = () => {
 // Main Account Page
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState("profile");
+  const { data: profileData, isLoading, refetch } = useGetMyProfileQuery();
+
+  const user = profileData?.data?.user;
+
+  if (isLoading) {
+    return (
+      <div className="bg-slate-50 min-h-screen flex items-center justify-center">
+        <Loader2 size={48} className="animate-spin text-emerald-500" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
       case "profile":
-        return <ProfileTab />;
+        return <ProfileTab user={user} refetch={refetch} />;
       case "orders":
         return <OrdersTab />;
       case "wishlist":
@@ -798,7 +938,7 @@ export default function AccountPage() {
       case "password":
         return <ChangePasswordTab />;
       default:
-        return <ProfileTab />;
+        return <ProfileTab user={user} refetch={refetch} />;
     }
   };
 
@@ -808,7 +948,11 @@ export default function AccountPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              user={user}
+            />
           </div>
 
           {/* Content */}
