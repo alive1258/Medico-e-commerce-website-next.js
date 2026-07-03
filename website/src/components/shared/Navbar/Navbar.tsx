@@ -14,6 +14,8 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
 import { sidebarToggle } from "@/src/redux/features/sidebarSlice";
@@ -49,8 +51,9 @@ export default function Navbar() {
   const { data: myInfo } = useGetMyProfileQuery();
   const [signOut, { isLoading: isLoggingOut }] = useSignOutMutation();
 
-  const { data } = useGetAllProductCategoriesQuery(undefined);
-  const filteredData = data?.data || [];
+  const { data: catData } = useGetAllProductCategoriesQuery(undefined);
+  const filteredData = catData?.data || [];
+  console.log(filteredData, "filteredData");
 
   // Calculate unique product count
   const uniqueProductCount = cartItems.length;
@@ -76,16 +79,28 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       const response = await signOut().unwrap();
-      if (response?.success) {
+      if (response) {
         dispatch(logout());
         dispatch(authApi.util.resetApiState());
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        document.cookie =
+          "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
         toast.success("Successfully logged out!");
         setShowLogoutModal(false);
         router.push("/");
       }
     } catch (err: unknown) {
       const error = err as ApiError;
+      dispatch(logout());
+      dispatch(authApi.util.resetApiState());
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      document.cookie =
+        "refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
       toast.error(error?.data?.message || "Sign out failed", { theme: "dark" });
+      setShowLogoutModal(false);
+      router.push("/");
     }
   };
 
@@ -98,22 +113,21 @@ export default function Navbar() {
       });
     }
   };
-  const isActiveLink = (href: string) => pathname === href;
 
   return (
     <>
       {/* ==================== HEADER ==================== */}
       <header className="w-full bg-white text-slate-800 border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-        <div className="container h-16 flex items-center justify-between gap-4">
+        <div className="container h-16 flex items-center justify-between gap-4 ">
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-2xl font-black tracking-tight text-slate-900 rounded p-1"
+            className="flex items-center gap-1.5 text-xl sm:text-2xl font-black tracking-tight text-slate-900 rounded p-1 shrink-0"
           >
             <span className="text-emerald-600 flex items-center">
               M
               <Plus
-                size={20}
+                size={18}
                 className="stroke-4 text-red-500 -mx-0.5 animate-pulse"
               />
               dico
@@ -121,7 +135,7 @@ export default function Navbar() {
           </Link>
 
           {/* Search Bar (Desktop) */}
-          <div className="hidden md:ml-9 md:flex flex-1 max-w-xl relative">
+          <div className="hidden md:flex flex-1 max-w-xl relative mx-4">
             <input
               type="text"
               placeholder="Search medicine or health products..."
@@ -135,20 +149,13 @@ export default function Navbar() {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 md:gap-4">
-            <Link
-              href="/shops"
-              className="hidden lg:block text-sm font-semibold text-slate-600 hover:text-emerald-600"
-            >
-              Shops
-            </Link>
-
+          <div className="flex items-center gap-1 sm:gap-3">
             {/* Wishlist */}
             <Link
               href="/wishlist"
-              className="relative p-2 rounded-xl text-slate-600 hover:text-red-500 hover:bg-slate-100"
+              className="relative p-2 rounded-xl text-slate-600 hover:text-red-500 hover:bg-slate-100 transition-all"
             >
-              <Heart size={22} />
+              <Heart size={20} className="sm:w-5.5 sm:h-5.5" />
               {wishlistCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                   {wishlistCount}
@@ -161,7 +168,7 @@ export default function Navbar() {
               onClick={() => dispatch(sidebarToggle())}
               className="relative p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-all"
             >
-              <ShoppingBag size={22} />
+              <ShoppingBag size={20} className="sm:w-5.5 sm:h-5.5" />
               {uniqueProductCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[10px] font-bold h-4 w-4 rounded-full flex items-center justify-center">
                   {uniqueProductCount}
@@ -169,35 +176,51 @@ export default function Navbar() {
               )}
             </button>
 
-            {/* Login */}
-
-            <div className="hidden lg:flex items-center space-x-6">
+            {/* ✅ Login / Dashboard + Logout (Desktop) */}
+            <div className="hidden lg:flex items-center gap-3">
               {isLoggedIn ? (
                 <>
                   <Link
-                    href="/dashboard/account"
-                    className={`text-[16px] font-medium transition-colors ${
-                      isActiveLink("/dashboard/account")
-                        ? "text-[#01DC62]"
-                        : "text-gray-300 hover:text-white"
-                    }`}
+                    href="/account"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold transition-all"
                   >
-                    Dashboard
+                    <LayoutDashboard size={16} />
+                    <span>Dashboard</span>
                   </Link>
                   <button
                     onClick={() => setShowLogoutModal(true)}
-                    className="text-[16px] font-medium text-gray-300 hover:text-white transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-bold transition-all"
                   >
-                    Log Out
+                    <LogOut size={16} />
+                    <span>Logout</span>
                   </button>
                 </>
               ) : (
                 <Link
                   href="/login"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-sm font-bold text-slate-700 border border-slate-200"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-sm font-bold text-slate-700 border border-slate-200 hover:bg-slate-200 transition-all"
                 >
                   <User size={16} />
-                  <span className="hidden sm:inline">Login</span>
+                  <span>Login</span>
+                </Link>
+              )}
+            </div>
+
+            {/* ✅ Mobile: Login/User Icon */}
+            <div className="lg:hidden">
+              {isLoggedIn ? (
+                <Link
+                  href="/account"
+                  className="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-all"
+                >
+                  <User size={20} />
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  className="p-2 rounded-xl text-slate-600 hover:text-emerald-600 hover:bg-slate-100 transition-all"
+                >
+                  <User size={20} />
                 </Link>
               )}
             </div>
@@ -205,9 +228,9 @@ export default function Navbar() {
             {/* Hamburger Menu */}
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 md:hidden rounded-xl hover:bg-slate-100 text-slate-600 transition-all"
+              className="p-2 lg:hidden rounded-xl hover:bg-slate-100 text-slate-600 transition-all"
             >
-              <Menu size={24} />
+              <Menu size={22} />
             </button>
           </div>
         </div>
@@ -282,7 +305,7 @@ export default function Navbar() {
 
       {/* ==================== MOBILE MENU SIDE DRAWER ==================== */}
       <div
-        className={`fixed inset-0 z-50 md:hidden transition-all duration-300 ${
+        className={`fixed inset-0 z-50 lg:hidden transition-all duration-300 ${
           isMobileMenuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
@@ -293,7 +316,7 @@ export default function Navbar() {
           onClick={() => setIsMobileMenuOpen(false)}
         />
         <div
-          className={`absolute inset-y-0 left-0 w-4/5 max-w-xs bg-white border-r border-slate-200 flex flex-col p-6 transition-transform duration-100 ease-in-out ${
+          className={`absolute inset-y-0 left-0 w-4/5 max-w-xs bg-white border-r border-slate-200 flex flex-col p-6 transition-transform duration-300 ease-in-out ${
             isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -309,7 +332,15 @@ export default function Navbar() {
             </button>
           </div>
 
-          <div className="relative mb-6">
+          {/* ✅ Mobile User Info */}
+          {isLoggedIn && user && (
+            <div className="mb-4 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+              <p className="text-sm font-bold text-slate-800">{user.name}</p>
+              <p className="text-xs text-slate-500">{user.email}</p>
+            </div>
+          )}
+
+          <div className="relative mb-4">
             <input
               type="text"
               placeholder="Search medicine..."
@@ -323,11 +354,23 @@ export default function Navbar() {
             />
           </div>
 
-          <nav className="flex flex-col gap-1.5 overflow-y-auto pr-1 no-scrollbar">
+          <nav className="flex flex-col gap-1.5 overflow-y-auto pr-1 no-scrollbar flex-1">
+            {/* ✅ Dashboard Link (Mobile) */}
+            {isLoggedIn && (
+              <Link
+                href="/account"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 transition-all"
+              >
+                <LayoutDashboard size={18} />
+                Dashboard
+              </Link>
+            )}
+
             <Link
               href="/shops"
               onClick={() => setIsMobileMenuOpen(false)}
-              className="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 bg-slate-50 hover:bg-slate-100"
+              className="px-4 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100 transition-all"
             >
               Shops
             </Link>
@@ -349,6 +392,23 @@ export default function Navbar() {
                 </Link>
               );
             })}
+
+            {/* ✅ Logout Button (Mobile) */}
+            {isLoggedIn && (
+              <>
+                <div className="h-px bg-slate-200 my-2" />
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setShowLogoutModal(true);
+                  }}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 transition-all"
+                >
+                  <LogOut size={18} />
+                  Logout
+                </button>
+              </>
+            )}
           </nav>
         </div>
       </div>

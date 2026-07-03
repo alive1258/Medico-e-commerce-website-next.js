@@ -1,3 +1,4 @@
+// src/redux/api/authApi.ts
 import {
   EmailRequest,
   LoginResponse,
@@ -13,6 +14,11 @@ import { baseApi } from "./baseApi";
 
 const AUTH_URL = "/auth";
 
+// ✅ Add SignOutResponse type
+export interface SignOutResponse {
+  message: string;
+}
+
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ✅ LOGIN
@@ -24,8 +30,8 @@ export const authApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.user],
     }),
-    // ✅ LOGOUT
-    signOut: builder.mutation<LoginResponse, void>({
+    // ✅ LOGOUT - Fix response type
+    signOut: builder.mutation<SignOutResponse, void>({
       query: () => ({
         url: `${AUTH_URL}/sign-out`,
         method: "POST",

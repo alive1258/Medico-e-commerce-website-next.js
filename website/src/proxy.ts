@@ -6,24 +6,27 @@ const authRoutes = [
   "/forget-password",
   "/otp",
   "/signup",
+
   "/verify-otp",
 ];
 
+// Next.js 16 expects either a named export 'proxy' or a default export
 export async function proxy(request: NextRequest) {
-  const adminAccessToken = request.cookies.get("refreshToken")?.value;
+  // ⚠️ IMPORTANT CHECK: Make sure your login flow actually saves a cookie called "refreshToken"
+  const token = request.cookies.get("refreshToken")?.value;
   const pathname = request.nextUrl.pathname;
 
-  // Prevent logged-in users from accessing authentication pages
-  if (adminAccessToken && authRoutes.includes(pathname)) {
+  // 1. Prevent logged-in users from accessing authentication pages
+  if (token && authRoutes.includes(pathname)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Redirect unauthenticated users to signin page for protected routes
-  if (!adminAccessToken && pathname.startsWith("/dashboard")) {
+  // 2. Redirect unauthenticated users to login page for protected routes
+  if (!token && pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Allow access & prevent caching issues (fixes back button issue)
+  // 3. Allow access & handle caching headers
   const response = NextResponse.next();
   response.headers.set(
     "Cache-Control",
@@ -34,13 +37,14 @@ export async function proxy(request: NextRequest) {
   return response;
 }
 
-//  Correct static matcher
+// Next.js 16 Static Matcher
 export const config = {
   matcher: [
     "/",
     "/login",
     "/forget-password",
     "/otp",
+
     "/signup",
     "/verify-otp",
     "/dashboard",

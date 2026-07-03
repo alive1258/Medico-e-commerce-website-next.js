@@ -7,6 +7,7 @@ export const tagTypes: Record<string, string> = {
   orders: "orders",
   addresses: "addresses",
   wishlists: "wishlists",
+  products: "products",
   carts: "carts",
   product_categories: "product-categories",
 };
@@ -20,6 +21,7 @@ export const tagTypesList: string[] = [
   tagTypes.orders,
   tagTypes.addresses,
   tagTypes.wishlists,
+  tagTypes.products,
   tagTypes.carts,
   tagTypes.product_categories,
 ];

@@ -1,3 +1,4 @@
+// app/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import CategorySection from "@/src/components/HomePage/CategorySection/CategorySection";
 import HomepageHero from "@/src/components/HomePage/HeroAndServices/HeroAndServices";
@@ -27,40 +28,62 @@ interface IProductsApiResponse {
   data: any[];
 }
 
+async function fetchCategories(baseUrl: string) {
+  const res = await fetch(`${baseUrl}/product-categories`, {
+    next: { revalidate: 100 },
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch categories");
+  }
+
+  const result: ICategoriesApiResponse = await res.json();
+  return result.data || [];
+}
+
+async function fetchProducts(baseUrl: string) {
+  const res = await fetch(`${baseUrl}/products?limit=200`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch products");
+  }
+
+  const result: IProductsApiResponse = await res.json();
+  return result?.data || [];
+}
+
 const Page = async () => {
   let categories: IProductCategory[] = [];
   let products: any[] = [];
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-  // 1. Fetch Categories
-  try {
-    const res = await fetch(`${baseUrl}/product-categories`, {
-      next: { revalidate: 100 },
-    });
-
-    if (res.ok) {
-      const result: ICategoriesApiResponse = await res.json();
-      categories = result?.data || [];
-    }
-  } catch (error) {
-    console.error("Failed to fetch product categories:", error);
+  if (!baseUrl) {
+    console.error("NEXT_PUBLIC_API_URL is not defined");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-red-500">API URL not configured</p>
+      </div>
+    );
   }
 
   try {
-    const res = await fetch(`${baseUrl}/products?limit=200`, {
-      cache: "no-store",
-    });
-
-    if (res.ok) {
-      const result: IProductsApiResponse = await res.json();
-      products = result?.data || [];
-    }
+    categories = await fetchCategories(baseUrl);
+    console.log(`✅ Total categories fetched: ${categories.length}`);
   } catch (error) {
-    console.error("Failed to fetch products:", error);
+    console.error("❌ Failed to fetch product categories:", error);
+    categories = [];
   }
 
-  console.log(`Total products fetched: ${products.length}`);
+  try {
+    products = await fetchProducts(baseUrl);
+    console.log(`✅ Total products fetched: ${products.length}`);
+  } catch (error) {
+    console.error("❌ Failed to fetch products:", error);
+    products = [];
+  }
 
   return (
     <>

@@ -28,7 +28,6 @@ import {
   Plus,
   Minus,
   AlertCircle,
-  LogIn,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -193,19 +192,7 @@ export default function ProductCheckout() {
     useGetMyProfileQuery();
 
   const user = profileData?.data?.user;
-  const isAuthenticated = !!user;
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!profileLoading && !isAuthenticated) {
-      toast.warning("Please login to place your order!", {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
-      sessionStorage.setItem("redirectAfterLogin", "/checkout");
-      router.push("/login");
-    }
-  }, [isAuthenticated, profileLoading, router]);
+  // const isAuthenticated = !!user;
 
   // Get cart data from Redux
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
@@ -307,15 +294,15 @@ export default function ProductCheckout() {
 
   const handlePlaceOrder = async () => {
     // Check authentication
-    if (!isAuthenticated) {
-      toast.error("Please login to place your order!", {
-        position: "bottom-right",
-        autoClose: 3000,
-      });
-      sessionStorage.setItem("redirectAfterLogin", "/checkout");
-      router.push("/login");
-      return;
-    }
+    // if (!isAuthenticated) {
+    //   toast.error("Please login to place your order!", {
+    //     position: "bottom-right",
+    //     autoClose: 3000,
+    //   });
+    //   sessionStorage.setItem("redirectAfterLogin", "/checkout");
+    //   router.push("/login");
+    //   return;
+    // }
 
     // Validate form
     if (!formData.fullName || !formData.mobileNumber || !formData.fullAddress) {
@@ -469,34 +456,6 @@ export default function ProductCheckout() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto mb-4" />
           <p className="text-slate-600 font-semibold">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // If not authenticated, show login prompt
-  if (!isAuthenticated) {
-    return (
-      <div className="bg-slate-50 min-h-screen py-20">
-        <div className="container mx-auto px-4 max-w-4xl text-center">
-          <div className="bg-white rounded-2xl p-12 shadow-sm">
-            <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogIn size={40} className="text-amber-600" />
-            </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
-              Please Login to Continue
-            </h2>
-            <p className="text-slate-500 mb-6">
-              You need to be logged in to place an order.
-            </p>
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
-            >
-              <LogIn size={18} />
-              Login to Your Account
-            </Link>
-          </div>
         </div>
       </div>
     );

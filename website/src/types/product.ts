@@ -35,6 +35,7 @@ export interface Product {
   category?: {
     id: string;
     name: string;
+    slug: string;
   };
   brand?: {
     id: string;
