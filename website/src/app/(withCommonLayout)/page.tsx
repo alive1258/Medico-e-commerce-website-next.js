@@ -71,17 +71,15 @@ const Page = async () => {
 
   try {
     categories = await fetchCategories(baseUrl);
-    console.log(`✅ Total categories fetched: ${categories.length}`);
   } catch (error) {
-    console.error("❌ Failed to fetch product categories:", error);
+    console.error(" Failed to fetch product categories:", error);
     categories = [];
   }
 
   try {
     products = await fetchProducts(baseUrl);
-    console.log(`✅ Total products fetched: ${products.length}`);
   } catch (error) {
-    console.error("❌ Failed to fetch products:", error);
+    console.error(" Failed to fetch products:", error);
     products = [];
   }
 

@@ -1,10 +1,9 @@
-// app/category/[slug]/loading.tsx
 import { ChevronLeft, Filter } from "lucide-react";
 
 export default function Loading() {
   return (
     <div className="bg-slate-50 min-h-screen">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container py-6">
         {/* Back Button Skeleton */}
         <div className="flex items-center gap-2 text-slate-400 mb-4">
           <ChevronLeft size={20} />

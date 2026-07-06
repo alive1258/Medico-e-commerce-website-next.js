@@ -26,17 +26,14 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
   const dispatch = useDispatch();
   const cartItems = useSelector((state: any) => state?.cart?.cartItems || []);
 
-  // ✅ API থেকে আসা ডেটা ম্যাপিং
   const image = product.thumbnail || "/placeholder.png";
 
-  // ✅ variants থেকে প্রথম বা সস্তা ভেরিয়েন্ট নেওয়া
   const variants = product?.variants || [];
   const sortedVariants = [...variants].sort(
     (a: any, b: any) => a.price - b.price,
   );
   const cheapestVariant = sortedVariants[0] || null;
 
-  // ✅ ডিফল্ট প্যাক সেট করা
   const defaultPack = cheapestVariant
     ? {
         id: cheapestVariant.id || "default",
@@ -109,7 +106,7 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
 
     dispatch(ADD_TO_CART(cartItem));
 
-    toast.success(`✅ ${product.name} added to cart!`, {
+    toast.success(` ${product.name} added to cart!`, {
       position: "bottom-right",
       autoClose: 3000,
       hideProgressBar: false,
@@ -128,7 +125,7 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
     e.stopPropagation();
     dispatch(REMOVE_FROM_CART({ id: product.id, packSizeId: selectedPack.id }));
 
-    toast.info(`🛒 Removed 1 ${product.name} from cart`, {
+    toast.info(` Removed 1 ${product.name} from cart`, {
       position: "bottom-right",
       autoClose: 2000,
       hideProgressBar: false,
@@ -166,7 +163,6 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
     setIsWishlisted(!isWishlisted);
   };
 
-  // ✅ variants কে packSizes ফরম্যাটে কনভার্ট করা
   const packSizes = variants.map((v: any) => ({
     id: v.id,
     label: v.pack_size,
@@ -178,7 +174,6 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
     inStock: v.stock > 0,
   }));
 
-  // If no variants but product has price_range
   if (packSizes.length === 0 && product.price_range) {
     packSizes.push({
       id: "default",
@@ -283,13 +278,6 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
             </h4>
           </Link>
         </div>
-
-        {/* Manufacturer */}
-        {product.manufacturer && (
-          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-            {product.manufacturer}
-          </p>
-        )}
 
         {/* Pack Size Selector */}
         {packSizes.length > 1 && (

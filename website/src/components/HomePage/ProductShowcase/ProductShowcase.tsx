@@ -16,7 +16,6 @@ export default function ProductShowcase({ products }: { products: any[] }) {
   const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const cartCount = useSelector((state: any) => state?.cart?.totalQuantity);
 
-  // ✅ FIX: Store category objects with both name and slug
   const categoriesList = useMemo(() => {
     if (!products || products.length === 0) return [];
 
@@ -91,7 +90,6 @@ export default function ProductShowcase({ products }: { products: any[] }) {
         {/* Dynamic Category Carousels */}
         <div className="space-y-12">
           {categoriesList.map((category) => {
-            // ✅ FIX: Filter by category name
             const filteredProducts = products?.filter(
               (p) => p.category?.name === category.name,
             );
@@ -100,7 +98,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
 
             return (
               <div
-                key={category.slug} // ✅ FIX: Use slug as key
+                key={category.slug}
                 className="md:bg-white p-0.5 md:p-5 md:rounded-2xl md:shadow-sm md:border md:border-slate-100 relative group"
               >
                 {/* Category Header */}
@@ -113,7 +111,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
 
                   <div className="md:flex items-center gap-3">
                     <Link
-                      href={`/category/${category.slug}`} // ✅ FIX: Use category.slug
+                      href={`/category/${category.slug}`}
                       className="text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-emerald-500/20 px-2 py-1 rounded"
                     >
                       See All
@@ -121,7 +119,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
 
                     <div className="md:flex hidden items-center gap-1.5">
                       <button
-                        onClick={() => handleScroll(category.slug, "left")} // ✅ FIX: Use slug
+                        onClick={() => handleScroll(category.slug, "left")}
                         className="p-2 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                         aria-label={`Scroll Left in ${category.name}`}
                       >
@@ -129,7 +127,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                       </button>
 
                       <button
-                        onClick={() => handleScroll(category.slug, "right")} // ✅ FIX: Use slug
+                        onClick={() => handleScroll(category.slug, "right")}
                         className="p-2 cursor-pointer rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-emerald-600 hover:border-emerald-300 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                         aria-label={`Scroll Right in ${category.name}`}
                       >
@@ -142,7 +140,7 @@ export default function ProductShowcase({ products }: { products: any[] }) {
                 {/* Product Carousel */}
                 <div
                   ref={(el) => {
-                    scrollRefs.current[category.slug] = el; // ✅ FIX: Use slug as key
+                    scrollRefs.current[category.slug] = el;
                   }}
                   className="flex items-stretch gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-4"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}

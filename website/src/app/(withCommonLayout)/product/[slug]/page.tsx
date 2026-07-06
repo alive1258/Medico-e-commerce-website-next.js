@@ -1,192 +1,62 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// app/product/[slug]/page.tsx
-"use client";
+// /* eslint-disable react-hooks/error-boundaries */
 
-import { useMemo } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft, Loader2 } from "lucide-react";
+// import { getProductBySlug } from "@/src/components/services/product.service";
+// import { notFound } from "next/navigation";
 
-import { Product, PackSize } from "@/src/types/product";
-import {
-  ImageGallery,
-  ProductDetails,
-  RelatedProducts,
-} from "@/src/components/product";
-import { useGetAllProductsQuery } from "@/src/redux/api/productsApi";
+// type Props = {
+//   params: Promise<{
+//     slug: string;
+//   }>;
+// };
 
-export default function ProductDetailPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+// export default async function ProductDetailsPage({ params }: Props) {
+//   const { slug } = await params;
 
-  // ✅ Fetch all products
-  const {
-    data: productsData,
-    isLoading,
-    isError,
-  } = useGetAllProductsQuery({ limit: 200 });
+//   try {
+//     const response = await getProductBySlug(slug);
 
-  // ✅ Find product by slug from all products
-  const product = useMemo(() => {
-    if (!productsData?.data) return null;
-    const allProducts = productsData.data as any[];
-    const found = allProducts.find((p) => p.slug === slug);
+//     const product = response.data?.data;
+//     console.log(product, "product");
 
-    if (!found) return null;
+//     return (
+//       <div className="container mx-auto p-20">
+//         <h1 className="text-3xl font-bold">{product.name}</h1>
+//       </div>
+//     );
+//   } catch (error) {
+//     notFound();
+//   }
+// }
 
-    // ✅ Transform the product to match Product type
-    const transformedProduct: Product = {
-      id: found.id,
-      name: found.name,
-      slug: found.slug,
-      thumbnail: found.thumbnail,
-      manufacturer: found.manufacturer,
-      is_prescription_required: found.is_prescription_required,
-      is_active: found.is_active,
-      category: found.category || undefined,
-      brand: found.brand || undefined,
-      variants: found.variants || [],
-      price_range: found.price_range || { min: 0, max: 0 },
-      discount_range: found.discount_range || { min: 0, max: 0 },
-      created_at: found.created_at,
-      updated_at: found.updated_at,
-    };
+/* eslint-disable react-hooks/error-boundaries */
 
-    return transformedProduct;
-  }, [productsData, slug]);
+import ProductDetailsClient from "@/src/components/product/ProductDetailsClient";
+import { getProductBySlug } from "@/src/components/services/product.service";
 
-  // ✅ Get all products for related items
-  const allProducts = useMemo(() => {
-    if (!productsData?.data) return [];
-    return productsData.data as any[];
-  }, [productsData]);
+import { notFound } from "next/navigation";
 
-  // ✅ Find related products (same category, different product)
-  const relatedProducts = useMemo(() => {
-    if (!product || !allProducts.length) return [];
+type Props = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
 
-    const related = allProducts
-      .filter(
-        (p) =>
-          p.category?.name === product.category?.name &&
-          p.id !== product.id &&
-          p.is_active === true,
-      )
-      .slice(0, 4)
-      .map((p) => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        thumbnail: p.thumbnail,
-        manufacturer: p.manufacturer,
-        is_prescription_required: p.is_prescription_required,
-        is_active: p.is_active,
-        category: p.category,
-        brand: p.brand,
-        variants: p.variants || [],
-        price_range: p.price_range || { min: 0, max: 0 },
-        discount_range: p.discount_range || { min: 0, max: 0 },
-        created_at: p.created_at,
-        updated_at: p.updated_at,
-      }));
+export default async function ProductDetailsPage({ params }: Props) {
+  const { slug } = await params;
 
-    return related;
-  }, [product, allProducts]);
+  try {
+    const response = await getProductBySlug(slug);
 
-  // Handle Buy Now
-  const handleBuyNow = (
-    product: Product,
-    packSize: PackSize,
-    quantity: number,
-  ) => {
-    console.log(`Buying ${quantity} of ${product.name} (${packSize.label})`);
-    // Redirect to checkout or show modal
-  };
+    // Safeguard nested data structures based on your JSON schema
+    const product = response?.data?.data;
 
-  // ✅ Loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-white">
-        <div className="text-center">
-          <Loader2
-            size={48}
-            className="animate-spin text-emerald-500 mx-auto"
-          />
-          <p className="text-slate-500 mt-4 font-medium animate-pulse">
-            Loading product...
-          </p>
-        </div>
-      </div>
-    );
+    if (!product) {
+      notFound();
+    }
+
+    return <ProductDetailsClient product={product} />;
+  } catch (error) {
+    console.error("Failed to load product page details:", error);
+    notFound();
   }
-
-  // ✅ Error state
-  if (isError || !product) {
-    return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="text-6xl mb-4">🔍</div>
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
-            Product Not Found
-          </h2>
-          <p className="text-slate-500 mb-6">
-            The product you&apos;re looking for doesn&apos;t exist or has been
-            removed.
-          </p>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-sm hover:shadow-md"
-          >
-            <ChevronLeft size={18} />
-            Back to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bg-white min-h-screen">
-      <div className="container mx-auto px-4 py-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-slate-500 mb-6 overflow-x-auto">
-          <Link href="/" className="hover:text-emerald-600 transition-colors">
-            Home
-          </Link>
-          <span className="text-slate-300">/</span>
-          {product.category && (
-            <>
-              <Link
-                href={`/category/${product.category.slug || product.category.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-                className="hover:text-emerald-600 transition-colors"
-              >
-                {product.category.name}
-              </Link>
-              <span className="text-slate-300">/</span>
-            </>
-          )}
-          <span className="text-slate-800 font-semibold truncate">
-            {product.name}
-          </span>
-        </nav>
-
-        {/* Product Main Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image Gallery */}
-          <ImageGallery product={product} />
-
-          {/* Product Details */}
-          <ProductDetails product={product} onBuyNow={handleBuyNow} />
-        </div>
-
-        {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <RelatedProducts
-            products={relatedProducts}
-            currentProductId={product.id}
-          />
-        )}
-      </div>
-    </div>
-  );
 }

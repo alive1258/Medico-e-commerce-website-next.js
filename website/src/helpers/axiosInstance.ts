@@ -109,7 +109,7 @@ instance.interceptors.response.use(
   async (error: AxiosError<ApiErrorResponse>) => {
     const config = error.config as RetryAxiosRequestConfig;
 
-    if (error.response?.status === 403 && config && !config._retry) {
+    if (error.response?.status === 401 && config && !config._retry) {
       config._retry = true;
 
       if (!isRefreshing) {

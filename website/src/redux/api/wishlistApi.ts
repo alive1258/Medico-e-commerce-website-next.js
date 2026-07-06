@@ -1,20 +1,29 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/redux/api/wishlistApi.ts
 import { tagTypes } from "../tag-types";
 import { baseApi } from "./baseApi";
 
 const WISHLIST_URL = "/wishlists";
 
+export interface IWishlistProduct {
+  id: string;
+  name: string;
+  slug: string;
+  thumbnail?: string;
+  price?: number;
+  discount_price?: number;
+  variants?: any[];
+  price_range?: {
+    min: number;
+    max: number;
+  };
+}
+
 export interface IWishlistItem {
   id: string;
   user_id: string;
   product_id: string;
-  product: {
-    id: string;
-    name: string;
-    price: number;
-    images?: string[];
-    slug?: string;
-  };
+  product: IWishlistProduct;
   created_at: string;
   updated_at: string;
 }
@@ -43,16 +52,16 @@ export interface IApiResponse<T> {
 
 export const wishlistApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    // Get My Wishlist
+    // ✅ Get My Wishlist
     getMyWishlist: build.query<IApiResponse<IWishlistItem[]>, void>({
       query: () => ({
-        url: `${WISHLIST_URL}/my-wishlist`,
+        url: WISHLIST_URL,
         method: "GET",
       }),
       providesTags: [tagTypes.wishlists],
     }),
 
-    // Get All Wishlists (Admin)
+    // ✅ Get All Wishlists (Admin)
     getAllWishlists: build.query<
       IApiResponse<IWishlistItem[]>,
       { page?: number; limit?: number } | void
@@ -65,7 +74,7 @@ export const wishlistApi = baseApi.injectEndpoints({
       providesTags: [tagTypes.wishlists],
     }),
 
-    // Get Single Wishlist Item
+    // ✅ Get Single Wishlist Item
     getWishlistById: build.query<IApiResponse<IWishlistItem>, string>({
       query: (id) => ({
         url: `${WISHLIST_URL}/${id}`,
@@ -74,20 +83,20 @@ export const wishlistApi = baseApi.injectEndpoints({
       providesTags: (result, error, id) => [{ type: tagTypes.wishlists, id }],
     }),
 
-    // Add to Wishlist
+    // ✅ Add to Wishlist
     addToWishlist: build.mutation<
       IApiResponse<IWishlistItem>,
       ICreateWishlistDto
     >({
       query: (data) => ({
-        url: `${WISHLIST_URL}/create`,
+        url: WISHLIST_URL,
         method: "POST",
         data,
       }),
       invalidatesTags: [tagTypes.wishlists],
     }),
 
-    // Update Wishlist
+    // ✅ Update Wishlist
     updateWishlist: build.mutation<
       IApiResponse<IWishlistItem>,
       { id: string; data: IUpdateWishlistDto }
@@ -103,7 +112,7 @@ export const wishlistApi = baseApi.injectEndpoints({
       ],
     }),
 
-    // Remove from Wishlist
+    // ✅ Remove from Wishlist
     removeFromWishlist: build.mutation<IApiResponse<void>, string>({
       query: (id) => ({
         url: `${WISHLIST_URL}/${id}`,
@@ -111,10 +120,23 @@ export const wishlistApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.wishlists],
     }),
+
+    // ✅ Check if product is in wishlist
+    checkWishlistStatus: build.query<
+      IApiResponse<{ isInWishlist: boolean }>,
+      { productId: string }
+    >({
+      query: ({ productId }) => ({
+        url: `${WISHLIST_URL}/check/${productId}`,
+        method: "GET",
+      }),
+      providesTags: (result, error, { productId }) => [
+        { type: tagTypes.wishlists, id: productId },
+      ],
+    }),
   }),
 });
 
-// Export hooks
 export const {
   useGetMyWishlistQuery,
   useGetAllWishlistsQuery,
@@ -122,4 +144,5 @@ export const {
   useAddToWishlistMutation,
   useUpdateWishlistMutation,
   useRemoveFromWishlistMutation,
+  useCheckWishlistStatusQuery,
 } = wishlistApi;
