@@ -231,10 +231,7 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
       </button>
 
       {/* Product Image */}
-      <Link
-        href={`/product/${product.slug}`}
-        className="relative aspect-square w-full bg-slate-50 overflow-hidden block"
-      >
+      <div className="relative aspect-square w-full bg-slate-50 overflow-hidden block">
         {imageError ? (
           <div className="w-full h-full flex items-center justify-center bg-emerald-50">
             <span className="text-4xl font-bold text-emerald-400">
@@ -267,7 +264,7 @@ const CategoryProductCard: React.FC<CategoryProductCardProps> = ({
             <Eye size={18} className="text-slate-700" />
           </Link>
         </div>
-      </Link>
+      </div>
 
       <div className="p-3.5 flex-1 flex flex-col justify-between">
         {/* Product Name */}

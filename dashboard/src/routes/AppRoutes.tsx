@@ -47,6 +47,12 @@ import EditBrand from "../pages/Brands/EditBrand";
 import AllGenerics from "../pages/Generics/AllGenerics";
 import AddGeneric from "../pages/Generics/AddGeneric";
 import EditGeneric from "../pages/Generics/EditGeneric";
+import AllCouponUsages from "../pages/CouponUsages/AllCouponUsages";
+import CouponUsageDetails from "../pages/CouponUsages/CouponUsageDetails";
+import UserCouponHistory from "../pages/CouponUsages/UserCouponHistory";
+import AllInventoryLogs from "../pages/InventoryLogs/AllInventoryLogs";
+import AddInventoryLog from "../pages/InventoryLogs/AddInventoryLog";
+import InventoryLogDetails from "../pages/InventoryLogs/InventoryLogDetails";
 
 // Roles allowed to access the app
 const allowedRoles = [Role.SUPER_ADMIN, Role.ADMIN];
@@ -208,6 +214,30 @@ export const router = createBrowserRouter([
       {
         path: "edit-generic/:id",
         element: <EditGeneric />,
+      },
+      {
+        path: "coupon-usages",
+        element: <AllCouponUsages />,
+      },
+      {
+        path: "coupon-usage/:id",
+        element: <CouponUsageDetails />,
+      },
+      {
+        path: "user-coupon-history/:userId",
+        element: <UserCouponHistory />,
+      },
+      {
+        path: "inventory-logs",
+        element: <AllInventoryLogs />,
+      },
+      {
+        path: "add-inventory-log",
+        element: <AddInventoryLog />,
+      },
+      {
+        path: "inventory-log/:id",
+        element: <InventoryLogDetails />,
       },
 
       // ===== USERS =====
