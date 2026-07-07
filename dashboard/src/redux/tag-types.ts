@@ -20,6 +20,9 @@ export const tagTypes: Record<string, string> = {
   products: "products",
   variants: "variants",
   auditLogs: "auditLogs",
+  banners: "banners",
+  brands: "brands",
+  generics: "generics",
 };
 
 export const tagTypesList: string[] = [
@@ -39,4 +42,7 @@ export const tagTypesList: string[] = [
   tagTypes.auditLogs,
   tagTypes.products,
   tagTypes.variants,
+  tagTypes.banners,
+  tagTypes.brands,
+  tagTypes.generics,
 ];

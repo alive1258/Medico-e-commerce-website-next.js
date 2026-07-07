@@ -38,6 +38,15 @@ import EditProductVariant from "../pages/ProductVariant/EditProductVariant";
 import AllAddresses from "../pages/Address/AllAddresses";
 import AddAddress from "../pages/Address/AddAddress";
 import EditAddress from "../pages/Address/EditAddress";
+import AllBanners from "../pages/Banners/AllBanners";
+import AddBanner from "../pages/Banners/AddBanner";
+import EditBanner from "../pages/Banners/EditBanner";
+import AllBrands from "../pages/Brands/AllBrands";
+import AddBrand from "../pages/Brands/AddBrand";
+import EditBrand from "../pages/Brands/EditBrand";
+import AllGenerics from "../pages/Generics/AllGenerics";
+import AddGeneric from "../pages/Generics/AddGeneric";
+import EditGeneric from "../pages/Generics/EditGeneric";
 
 // Roles allowed to access the app
 const allowedRoles = [Role.SUPER_ADMIN, Role.ADMIN];
@@ -161,6 +170,44 @@ export const router = createBrowserRouter([
       {
         path: "edit-teams/:id",
         element: <EditTeams />,
+      },
+      {
+        path: "banners",
+        element: <AllBanners />,
+      },
+      {
+        path: "add-banner",
+        element: <AddBanner />,
+      },
+      {
+        path: "edit-banner/:id",
+        element: <EditBanner />,
+      },
+
+      {
+        path: "brands",
+        element: <AllBrands />,
+      },
+      {
+        path: "add-brand",
+        element: <AddBrand />,
+      },
+      {
+        path: "edit-brand/:id",
+        element: <EditBrand />,
+      },
+
+      {
+        path: "generics",
+        element: <AllGenerics />,
+      },
+      {
+        path: "add-generic",
+        element: <AddGeneric />,
+      },
+      {
+        path: "edit-generic/:id",
+        element: <EditGeneric />,
       },
 
       // ===== USERS =====
