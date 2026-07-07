@@ -1,42 +1,42 @@
-// src/pages/categories/AllCategories.tsx
+// src/pages/products/AllProducts.tsx
 import React, { useState } from "react";
 import Swal from "sweetalert2";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { Link } from "react-router";
 import { useDebounce } from "../../utils/useDebounce";
 import {
-  useGetAllCategoriesQuery,
-  useDeleteCategorieMutation,
-} from "../../redux/api/categoriesApi";
+  useGetAllProductsQuery,
+  useDeleteProductMutation,
+} from "../../redux/api/productApi";
 import type { ApiError } from "../../types/authType";
 import Pagination from "../../utils/Pagination";
-import type { Category } from "../../types/category.types";
+import type { IProduct } from "../../redux/api/productApi";
 
 const LIMIT = 10;
 
-const AllCategories: React.FC = () => {
+const AllProducts: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedSearch = useDebounce(searchValue, 500);
 
   const { data, error, isLoading, refetch, isFetching } =
-    useGetAllCategoriesQuery({
+    useGetAllProductsQuery({
       search: debouncedSearch,
       page: currentPage,
       limit: LIMIT,
     });
 
-  const [deleteCategory] = useDeleteCategorieMutation();
+  const [deleteProduct] = useDeleteProductMutation();
 
-  const categories: Category[] = data?.data || [];
+  const products: IProduct[] = data?.data || [];
   const totalPages = data?.meta?.totalPages ?? 1;
   const totalItems = data?.meta?.total ?? 0;
 
-  const handleDeleteCategory = async (category: Category) => {
+  const handleDeleteProduct = async (product: IProduct) => {
     try {
       const result = await Swal.fire({
         title: "Are you sure?",
-        text: `Delete category "${category.name}"?`,
+        text: `Delete product "${product.name}"?`,
         icon: "warning",
         showCancelButton: true,
         confirmButtonText: "Yes, delete it!",
@@ -44,12 +44,12 @@ const AllCategories: React.FC = () => {
 
       if (!result.isConfirmed) return;
 
-      await deleteCategory(category.id).unwrap();
+      await deleteProduct(product.id).unwrap();
 
       await Swal.fire({
         icon: "success",
         title: "Deleted!",
-        text: `Category "${category.name}" has been deleted.`,
+        text: `Product "${product.name}" has been deleted.`,
         timer: 1500,
         showConfirmButton: false,
       });
@@ -84,7 +84,7 @@ const AllCategories: React.FC = () => {
       <div className="flex h-[70vh] flex-col items-center justify-center text-center">
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-8 max-w-md">
           <h2 className="text-lg font-semibold text-red-400 mb-2">
-            Failed to load categories
+            Failed to load products
           </h2>
           <p className="text-sm text-gray-400 mb-4">
             {err.data?.message || "Server error. Please try again."}
@@ -106,18 +106,18 @@ const AllCategories: React.FC = () => {
         {/* HEADER */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-4 border-b border-gray-base">
           <div>
-            <h1 className="text-xl font-semibold">Categories</h1>
-            <p className="text-sm text-gray-400">Manage all categories</p>
+            <h1 className="text-xl font-semibold">Products</h1>
+            <p className="text-sm text-gray-400">Manage all products</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <input
               type="text"
-              placeholder="Search categories..."
+              placeholder="Search products..."
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               className="w-full sm:w-64 px-3 py-2 rounded-md border border-gray-base bg-black-base focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <Link to="/add-category">
+            <Link to="/add-product">
               <button className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white transition">
                 <Plus size={16} /> Add New
               </button>
@@ -136,7 +136,10 @@ const AllCategories: React.FC = () => {
                 Name
               </th>
               <th className="py-1 px-4 sm:py-1.5 sm:px-5 text-left border-l border-b border-gray-base font-semibold text-sm">
-                Slug
+                Category
+              </th>
+              <th className="py-1 px-4 sm:py-1.5 sm:px-5 text-left border-l border-b border-gray-base font-semibold text-sm">
+                Status
               </th>
               <th className="py-1 px-4 sm:py-1.5 sm:px-5 text-left border-l border-b border-gray-base font-semibold text-sm">
                 Actions
@@ -144,35 +147,54 @@ const AllCategories: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {categories.length > 0 ? (
-              categories.map((cat, index) => (
+            {products.length > 0 ? (
+              products.map((product, index) => (
                 <tr
-                  key={cat.id}
+                  key={product.id}
                   className={`${index % 2 !== 0 ? "bg-black-solid hover:bg-black-base" : ""}`}
                 >
                   <td className="py-1 px-4 sm:py-1.5 sm:px-5 border-b border-gray-base">
                     {(currentPage - 1) * LIMIT + index + 1}
                   </td>
                   <td className="py-1 px-4 sm:py-1.5 sm:px-5 border-l border-b border-gray-base">
-                    {cat.name}
+                    {product.name}
                   </td>
                   <td className="py-1 px-4 sm:py-1.5 sm:px-5 border-l border-b border-gray-base">
-                    {cat.slug || "-"}
+                    {product.category?.name || "-"}
+                  </td>
+                  <td className="py-1 px-4 sm:py-1.5 sm:px-5 border-l border-b border-gray-base">
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        product.is_active
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-red-500/20 text-red-400"
+                      }`}
+                    >
+                      {product.is_active ? "Active" : "Inactive"}
+                    </span>
                   </td>
                   <td className="py-1 px-4 sm:py-1.5 sm:px-4 border-l border-b border-gray-base">
                     <div className="flex gap-2">
-                      <Link to={`/edit-category/${cat.id}`}>
+                      <Link to={`/product/${product.slug}`}>
                         <button
                           className="p-2 cursor-pointer rounded-md hover:bg-gray-800"
-                          title="Edit Category"
+                          title="View Product"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      </Link>
+                      <Link to={`/edit-product/${product.id}`}>
+                        <button
+                          className="p-2 cursor-pointer rounded-md hover:bg-gray-800"
+                          title="Edit Product"
                         >
                           <Edit size={16} />
                         </button>
                       </Link>
                       <button
-                        onClick={() => handleDeleteCategory(cat)}
+                        onClick={() => handleDeleteProduct(product)}
                         className="flex cursor-pointer gap-2 w-fit p-2 text-red-500 hover:text-red-600 rounded text-sm"
-                        title="Delete Category"
+                        title="Delete Product"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -182,11 +204,11 @@ const AllCategories: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="py-8 text-center">
+                <td colSpan={5} className="py-8 text-center">
                   <div className="inline-block bg-black-solid px-6 py-4 rounded-2xl">
-                    <p className="text-gray-400 text-5xl mb-3">✨</p>
+                    <p className="text-gray-400 text-5xl mb-3">📦</p>
                     <span className="text-gray-500 text-sm font-medium">
-                      No Data Found
+                      No Products Found
                     </span>
                   </div>
                 </td>
@@ -208,4 +230,4 @@ const AllCategories: React.FC = () => {
   );
 };
 
-export default AllCategories;
+export default AllProducts;

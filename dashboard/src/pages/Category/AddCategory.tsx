@@ -3,23 +3,19 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { Plus } from "lucide-react";
-import { useCreateCategoriesMutation } from "../../redux/api/categoriesApi";
+
 import GradientButton from "../../components/ui/buttons/GradientButton";
 import Swal from "sweetalert2";
 import type { ApiError } from "../../types/authType";
 import PageHeader from "../../components/common/PageHeader";
 import Input from "../../components/ui/forms/Input";
+import { useCreateProductCategoryMutation } from "../../redux/api/productCategoriesApi";
 
 /* =======================
    Types
 ======================= */
 interface AddCategoryFormValues {
   name: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message?: string;
 }
 
 /* =======================
@@ -39,15 +35,20 @@ const AddCategory: React.FC = () => {
     },
   });
 
-  const [createCategory, { isLoading }] = useCreateCategoriesMutation();
-
+  const [createCategory, { isLoading }] = useCreateProductCategoryMutation();
 
   /* =======================
      Submit Handler
   ======================= */
   const onSubmit: SubmitHandler<AddCategoryFormValues> = async (data) => {
     try {
-      const response = (await createCategory(data).unwrap()) as ApiResponse;
+      // Generate slug from name
+      const formData = {
+        ...data,
+        slug: data.name.toLowerCase().replace(/\s+/g, "-"),
+      };
+
+      const response = await createCategory(formData).unwrap();
 
       if (response?.success) {
         toast.success("Category added successfully");
@@ -57,8 +58,7 @@ const AddCategory: React.FC = () => {
         toast.error(response?.message || "Failed to add category");
       }
     } catch (err: unknown) {
-      const error = err as ApiError; // Type assertion
-
+      const error = err as ApiError;
       Swal.fire(
         "Error!",
         error.data?.message || error.message || "Something went wrong.",

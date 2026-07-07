@@ -17,26 +17,18 @@ import {
   setWishlistItems,
   removeFromWishlistLocal,
   selectWishlistItems,
-  selectWishlistLoading,
 } from "@/src/redux/features/wishlistSlice";
 import { WishlistItem } from "@/src/components/wishlist/WishlistItem";
 import { WishlistEmpty } from "@/src/components/wishlist/WishlistEmpty";
-import { WishlistSkeleton } from "@/src/components/wishlist/WishlistSkeleton";
 
 export default function WishlistPage(): JSX.Element {
   const dispatch = useDispatch();
 
   // ✅ Ensure wishlistItems is always an array
   const wishlistItems: IWishlistItem[] = useSelector(selectWishlistItems) || [];
-  const isLoading: boolean = useSelector(selectWishlistLoading) || false;
 
   // ✅ Fetch wishlist data
-  const {
-    data: wishlistResponse,
-    isLoading: isFetching,
-    isError,
-    refetch,
-  } = useGetMyWishlistQuery();
+  const { data: wishlistResponse, refetch } = useGetMyWishlistQuery();
 
   // ✅ Remove from wishlist mutation
   const [removeFromWishlist] = useRemoveFromWishlistMutation();
@@ -78,64 +70,6 @@ export default function WishlistPage(): JSX.Element {
       });
     }
   };
-
-  // ✅ Loading state
-  if (isFetching || isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-2 mb-6">
-            <Link
-              href="/"
-              className="p-2 hover:bg-white rounded-xl transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </Link>
-            <h1 className="text-2xl font-extrabold text-slate-900">
-              My Wishlist
-            </h1>
-          </div>
-          <WishlistSkeleton />
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Error state
-  if (isError) {
-    return (
-      <div className="min-h-screen bg-slate-50">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-2 mb-6">
-            <Link
-              href="/"
-              className="p-2 hover:bg-white rounded-xl transition-colors"
-            >
-              <ChevronLeft size={20} />
-            </Link>
-            <h1 className="text-2xl font-extrabold text-slate-900">
-              My Wishlist
-            </h1>
-          </div>
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">😅</div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">
-              Something went wrong
-            </h2>
-            <p className="text-slate-500 mb-6">
-              We couldn&apos;t load your wishlist. Please try again.
-            </p>
-            <button
-              onClick={() => refetch()}
-              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition-all"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ✅ Empty state - check if array is empty
   if (
@@ -189,7 +123,7 @@ export default function WishlistPage(): JSX.Element {
 
         {/* Wishlist Items */}
         <div className="space-y-3">
-          {wishlistItems.map((item: IWishlistItem) => (
+          {wishlistItems?.map((item: IWishlistItem) => (
             <WishlistItem
               key={item.id}
               item={item}
