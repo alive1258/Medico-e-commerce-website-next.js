@@ -1,7 +1,7 @@
 export const tagTypes: Record<string, string> = {
   auth: "auth",
   user: "users",
-
+  addresses: "addresses",
   categories: "categories",
   pricing_category: "pricing-category",
 
@@ -24,14 +24,12 @@ export const tagTypes: Record<string, string> = {
 export const tagTypesList: string[] = [
   tagTypes.auth,
   tagTypes.user,
-
+  tagTypes.addresses,
   tagTypes.categories,
   tagTypes.pricing_category,
-
   tagTypes.divisions,
   tagTypes.districts,
   tagTypes.upzelas,
-
   tagTypes.blog_categories,
   tagTypes.blogs,
   tagTypes.blog_details,
