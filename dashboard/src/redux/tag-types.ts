@@ -18,6 +18,7 @@ export const tagTypes: Record<string, string> = {
   send_massage: "send-massage",
   product_categories: "product-categories",
   products: "products",
+  variants: "variants",
 };
 
 export const tagTypesList: string[] = [
@@ -37,4 +38,5 @@ export const tagTypesList: string[] = [
 
   tagTypes.product_categories,
   tagTypes.products,
+  tagTypes.variants,
 ];
