@@ -69,6 +69,10 @@ import AllPayments from "../pages/Payments/AllPayments";
 import CreatePayment from "../pages/Payments/CreatePayment";
 import PaymentDetails from "../pages/Payments/PaymentDetails";
 import EditPayment from "../pages/Payments/EditPayment";
+import AllPrescriptions from "../pages/prescription/AllPrescriptions";
+import CreatePrescription from "../pages/prescription/CreatePrescription";
+import PrescriptionDetails from "../pages/prescription/PrescriptionDetails";
+import EditPrescription from "../pages/prescription/EditPrescription";
 
 // Roles allowed to access the app
 const allowedRoles = [Role.SUPER_ADMIN, Role.ADMIN];
@@ -318,6 +322,22 @@ export const router = createBrowserRouter([
       {
         path: "/payments/:id/edit",
         element: <EditPayment />,
+      },
+      {
+        path: "/prescriptions",
+        element: <AllPrescriptions />,
+      },
+      {
+        path: "/add-prescription",
+        element: <CreatePrescription />,
+      },
+      {
+        path: "/prescriptions/:id",
+        element: <PrescriptionDetails />,
+      },
+      {
+        path: "/prescriptions/:id/edit",
+        element: <EditPrescription />,
       },
 
       // ===== USERS =====
