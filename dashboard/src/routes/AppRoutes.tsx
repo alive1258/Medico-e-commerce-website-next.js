@@ -53,6 +53,10 @@ import UserCouponHistory from "../pages/CouponUsages/UserCouponHistory";
 import AllInventoryLogs from "../pages/InventoryLogs/AllInventoryLogs";
 import AddInventoryLog from "../pages/InventoryLogs/AddInventoryLog";
 import InventoryLogDetails from "../pages/InventoryLogs/InventoryLogDetails";
+import AllOrderItems from "../pages/OrderItems/AllOrderItems";
+import AddOrderItem from "../pages/OrderItems/AddOrderItem";
+import EditOrderItem from "../pages/OrderItems/EditOrderItem";
+import OrderItemDetails from "../pages/OrderItems/OrderItemDetails";
 
 // Roles allowed to access the app
 const allowedRoles = [Role.SUPER_ADMIN, Role.ADMIN];
@@ -238,6 +242,22 @@ export const router = createBrowserRouter([
       {
         path: "inventory-log/:id",
         element: <InventoryLogDetails />,
+      },
+      {
+        path: "/order-items",
+        element: <AllOrderItems />,
+      },
+      {
+        path: "/add-order-item",
+        element: <AddOrderItem />,
+      },
+      {
+        path: "/edit-order-item/:id",
+        element: <EditOrderItem />,
+      },
+      {
+        path: "/order-item/:id",
+        element: <OrderItemDetails />,
       },
 
       // ===== USERS =====

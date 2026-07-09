@@ -26,6 +26,8 @@ export const tagTypes: Record<string, string> = {
   coupons: "coupons",
   couponUsages: "couponUsages",
   inventoryLogs: "inventoryLogs",
+  orderItems: "orderItems",
+  orders: "orders",
 };
 
 export const tagTypesList: string[] = [
@@ -51,4 +53,6 @@ export const tagTypesList: string[] = [
   tagTypes.coupons,
   tagTypes.couponUsages,
   tagTypes.inventoryLogs,
+  tagTypes.orderItems,
+  tagTypes.orders,
 ];
