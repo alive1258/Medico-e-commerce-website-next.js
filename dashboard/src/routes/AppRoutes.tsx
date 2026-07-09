@@ -57,6 +57,10 @@ import AllOrderItems from "../pages/OrderItems/AllOrderItems";
 import AddOrderItem from "../pages/OrderItems/AddOrderItem";
 import EditOrderItem from "../pages/OrderItems/EditOrderItem";
 import OrderItemDetails from "../pages/OrderItems/OrderItemDetails";
+import OrderTrackingHistory from "../pages/OrderTrackingHistory/OrderTrackingHistory";
+import OrderTrackingDetail from "../pages/OrderTrackingHistory/OrderTrackingDetail";
+import BulkUpdateStatus from "../pages/OrderTrackingHistory/BulkUpdateStatus";
+import OrderStatusStats from "../pages/OrderTrackingHistory/OrderStatusStats";
 
 // Roles allowed to access the app
 const allowedRoles = [Role.SUPER_ADMIN, Role.ADMIN];
@@ -258,6 +262,22 @@ export const router = createBrowserRouter([
       {
         path: "/order-item/:id",
         element: <OrderItemDetails />,
+      },
+      {
+        path: "/order-tracking",
+        element: <OrderTrackingHistory />,
+      },
+      {
+        path: "/order-tracking/:orderId",
+        element: <OrderTrackingDetail />,
+      },
+      {
+        path: "/order-tracking/bulk-update",
+        element: <BulkUpdateStatus />,
+      },
+      {
+        path: "/order-tracking/stats",
+        element: <OrderStatusStats />,
       },
 
       // ===== USERS =====

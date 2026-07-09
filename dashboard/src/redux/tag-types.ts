@@ -28,6 +28,7 @@ export const tagTypes: Record<string, string> = {
   inventoryLogs: "inventoryLogs",
   orderItems: "orderItems",
   orders: "orders",
+  orderTracking: "orderTracking",
 };
 
 export const tagTypesList: string[] = [
@@ -55,4 +56,5 @@ export const tagTypesList: string[] = [
   tagTypes.inventoryLogs,
   tagTypes.orderItems,
   tagTypes.orders,
+  tagTypes.orderTracking,
 ];
